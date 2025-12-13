@@ -98,7 +98,7 @@ export default function SwipeCard({
   return (
     <div
       ref={cardRef}
-      className={`absolute inset-0 bg-deep-teal/80 backdrop-blur-md rounded-xl border border-accent-teal/30 glow-border-teal p-4 flex flex-col ${
+      className={`absolute inset-0 bg-deep-teal rounded-xl border border-accent-teal/30 glow-border-teal p-4 flex flex-col ${
         isTop ? 'cursor-grab' : 'pointer-events-none'
       } ${dragState.isDragging ? 'cursor-grabbing' : ''}`}
       style={{
