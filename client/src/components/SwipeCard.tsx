@@ -71,9 +71,7 @@ export default function SwipeCard({
 
   const getTransform = () => {
     if (!isTop) {
-      const offset = stackIndex * 10;
-      const scale = 1 - stackIndex * 0.05;
-      return `translateY(${offset}px) scale(${scale})`;
+      return '';
     }
     if (dragState.isDragging) {
       return `translate(${dragState.x}px, ${dragState.y}px) rotate(${dragState.x * 0.1}deg)`;
@@ -83,15 +81,12 @@ export default function SwipeCard({
 
   const getOpacity = () => {
     if (!isTop) {
-      return 1 - stackIndex * 0.2;
+      return 0;
     }
     return 1;
   };
 
   const getBlur = () => {
-    if (!isTop) {
-      return `blur(${stackIndex}px)`;
-    }
     return '';
   };
 
