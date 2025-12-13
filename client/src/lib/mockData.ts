@@ -47,6 +47,9 @@ export const mockEvents: Event[] = [
   { id: 'evt5', name: "Digital Art & AI Exhibition", location: "Cultural Atrium, L1", time: "Dec 16, 10:00-18:00", tags: ["Art", "Social"], recommended: false, swiped: null, date: 16 },
   { id: 'evt6', name: "Intro to Spatial Computing Workshop", location: "Synthesis Pods, L4", time: "Dec 15, 16:00", tags: ["Workshop", "Spatial"], recommended: false, swiped: null, date: 15 },
   { id: 'evt7', name: "The Sentient City: Tech Demo", location: "Data Stream Expo, L1", time: "Dec 17, 15:00", tags: ["Demo", "Smart Cities"], recommended: false, swiped: null, date: 17 },
+  { id: 'evt8', name: "Cybersecurity Summit", location: "Fortress Hall, L6", time: "Dec 18, 10:00", tags: ["Security", "Keynote"], recommended: true, swiped: null, date: 18 },
+  { id: 'evt9', name: "VR/AR Product Showcase", location: "Immersion Lab, L3", time: "Dec 18, 14:00", tags: ["VR", "AR", "Demo"], recommended: true, swiped: null, date: 18 },
+  { id: 'evt10', name: "Founders Fireside Chat", location: "Genesis Lounge, L7", time: "Dec 19, 17:00", tags: ["Networking", "Startups"], recommended: true, swiped: null, date: 19 },
 ];
 
 export const mockPOIs: POI[] = [
@@ -65,4 +68,6 @@ export const mockAttendees: Attendee[] = [
   { id: 'att6', name: "Kenji Tanaka", role: "Founder, NeuroForge", bio: "Brain-computer interface tech.", tags: ["#BCI", "#NeuroTech"], recommended: true, swiped: null },
   { id: 'att7', name: "Isabella Rossi", role: "Head of Innovation, NeoBank Digital", bio: "Digital transformation, blockchain in fintech.", tags: ["#Fintech", "#Blockchain"], recommended: false, swiped: null },
   { id: 'att8', name: "David Lee", role: "Quantum Computing Engineer, Aperture Labs", bio: "Superconducting qubit design.", tags: ["#QuantumHardware", "#Physics"], recommended: true, swiped: null },
+  { id: 'att9', name: "Sofia Martinez", role: "Director of AI Research, TechNova", bio: "Large language models and NLP systems.", tags: ["#NLP", "#AIResearch"], recommended: true, swiped: null },
+  { id: 'att10', name: "Alex Kim", role: "CTO, CloudScale Systems", bio: "Distributed computing and cloud architecture.", tags: ["#Cloud", "#Infrastructure"], recommended: true, swiped: null },
 ];
