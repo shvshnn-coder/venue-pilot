@@ -19,10 +19,13 @@ import {
   Attendee
 } from "@/lib/mockData";
 
+export type ProfileMode = 'attendee' | 'organizer';
+
 function AuraApp() {
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [events, setEvents] = useState<Event[]>(mockEvents); // todo: remove mock functionality
   const [attendees, setAttendees] = useState<Attendee[]>(mockAttendees); // todo: remove mock functionality
+  const [profileMode, setProfileMode] = useState<ProfileMode>('attendee');
 
   const handleEventSwipe = (id: string, direction: 'left' | 'right') => {
     setEvents(prev => prev.map(e => e.id === id ? { ...e, swiped: direction } : e));
@@ -30,6 +33,16 @@ function AuraApp() {
 
   const handleAttendeeSwipe = (id: string, direction: 'left' | 'right') => {
     setAttendees(prev => prev.map(a => a.id === id ? { ...a, swiped: direction } : a));
+  };
+
+  const handleCreateEvent = (newEvent: Omit<Event, 'id' | 'swiped' | 'isUserCreated'>) => {
+    const event: Event = {
+      ...newEvent,
+      id: `evt${Date.now()}`,
+      swiped: null,
+      isUserCreated: true,
+    };
+    setEvents(prev => [event, ...prev]);
   };
 
   const renderScreen = () => {
@@ -43,7 +56,16 @@ function AuraApp() {
       case 'attendees':
         return <AttendeesScreen attendees={attendees} onSwipe={handleAttendeeSwipe} />;
       case 'profile':
-        return <ProfileScreen user={mockUser} pois={mockPOIs} />;
+        return (
+          <ProfileScreen 
+            user={mockUser} 
+            pois={mockPOIs} 
+            mode={profileMode}
+            onModeChange={setProfileMode}
+            onCreateEvent={handleCreateEvent}
+            events={events}
+          />
+        );
       default:
         return <HomeScreen events={events} onSwipe={handleEventSwipe} />;
     }

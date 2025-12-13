@@ -2,15 +2,25 @@ import { useState } from "react";
 import PreferenceSlider from "../PreferenceSlider";
 import POIList from "../POIList";
 import { Button } from "@/components/ui/button";
-import { User, POI } from "@/lib/mockData";
+import { User, POI, Event } from "@/lib/mockData";
 import { useToast } from "@/hooks/use-toast";
+import { ProfileMode } from "@/App";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plus, Calendar, MapPin, Tag } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ProfileScreenProps {
   user: User;
   pois: POI[];
+  mode: ProfileMode;
+  onModeChange: (mode: ProfileMode) => void;
+  onCreateEvent: (event: Omit<Event, 'id' | 'swiped'>) => void;
+  events: Event[];
 }
 
-export default function ProfileScreen({ user, pois }: ProfileScreenProps) {
+export default function ProfileScreen({ user, pois, mode, onModeChange, onCreateEvent, events }: ProfileScreenProps) {
   const { toast } = useToast();
   const initials = user.name.split(' ').map(n => n[0]).join('');
   const [preferences, setPreferences] = useState({
@@ -19,6 +29,14 @@ export default function ProfileScreen({ user, pois }: ProfileScreenProps) {
     workshops: 40,
     panels: 70,
     demos: 50
+  });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    name: '',
+    location: '',
+    time: '',
+    tags: '',
+    date: 15,
   });
 
   const handleSave = () => {
@@ -29,9 +47,39 @@ export default function ProfileScreen({ user, pois }: ProfileScreenProps) {
     });
   };
 
+  const handleCreateEvent = () => {
+    if (!newEvent.name || !newEvent.location || !newEvent.time) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in event name, location, and time.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    onCreateEvent({
+      name: newEvent.name,
+      location: newEvent.location,
+      time: newEvent.time,
+      tags: newEvent.tags.split(',').map(t => t.trim()).filter(Boolean),
+      date: newEvent.date,
+      recommended: false,
+    });
+
+    toast({
+      title: "Event Created",
+      description: `"${newEvent.name}" has been added to the event list.`
+    });
+
+    setNewEvent({ name: '', location: '', time: '', tags: '', date: 15 });
+    setDialogOpen(false);
+  };
+
+  const myEvents = events.filter(e => e.isUserCreated === true);
+
   return (
     <div className="p-4 h-full flex flex-col animate-fadeIn overflow-y-auto" data-testid="screen-profile">
-      <div className="text-center mb-6">
+      <div className="text-center mb-4">
         <div className="w-20 h-20 rounded-full border-2 border-accent-gold bg-charcoal mx-auto mb-3 glow-border-gold flex items-center justify-center font-display text-3xl text-accent-gold">
           {initials}
         </div>
@@ -44,48 +92,218 @@ export default function ProfileScreen({ user, pois }: ProfileScreenProps) {
         </p>
       </div>
 
-      <div className="bg-deep-teal/50 rounded-lg border border-accent-teal/20 p-4 mb-4">
-        <h3 className="font-display text-lg text-accent-gold mb-4">Event Preferences</h3>
-        <div className="space-y-4">
-          <PreferenceSlider 
-            label="Keynotes" 
-            defaultValue={preferences.keynotes}
-            onChange={(v) => setPreferences(p => ({ ...p, keynotes: v }))}
-          />
-          <PreferenceSlider 
-            label="Networking" 
-            defaultValue={preferences.networking}
-            onChange={(v) => setPreferences(p => ({ ...p, networking: v }))}
-          />
-          <PreferenceSlider 
-            label="Workshops" 
-            defaultValue={preferences.workshops}
-            onChange={(v) => setPreferences(p => ({ ...p, workshops: v }))}
-          />
-          <PreferenceSlider 
-            label="Panels" 
-            defaultValue={preferences.panels}
-            onChange={(v) => setPreferences(p => ({ ...p, panels: v }))}
-          />
-          <PreferenceSlider 
-            label="Tech Demos" 
-            defaultValue={preferences.demos}
-            onChange={(v) => setPreferences(p => ({ ...p, demos: v }))}
-          />
-        </div>
-        <Button 
-          onClick={handleSave}
-          className="w-full mt-4 bg-accent-gold text-charcoal border-accent-gold font-display font-bold glow-border-gold"
-          data-testid="button-save-preferences"
+      <div className="flex gap-2 mb-4 justify-center">
+        <Button
+          variant={mode === 'attendee' ? 'default' : 'outline'}
+          onClick={() => onModeChange('attendee')}
+          className={`font-display ${mode === 'attendee' ? 'bg-accent-teal text-charcoal border-accent-teal glow-border-teal' : 'border-accent-teal/50 text-accent-teal'}`}
+          data-testid="button-mode-attendee"
         >
-          Save Preferences
+          Attendee
+        </Button>
+        <Button
+          variant={mode === 'organizer' ? 'default' : 'outline'}
+          onClick={() => onModeChange('organizer')}
+          className={`font-display ${mode === 'organizer' ? 'bg-accent-gold text-charcoal border-accent-gold glow-border-gold' : 'border-accent-gold/50 text-accent-gold'}`}
+          data-testid="button-mode-organizer"
+        >
+          Organizer
         </Button>
       </div>
 
-      <div className="bg-deep-teal/50 rounded-lg border border-accent-teal/20 p-4">
-        <h3 className="font-display text-lg text-accent-gold mb-3">Points of Interest</h3>
-        <POIList pois={pois} />
-      </div>
+      {mode === 'attendee' ? (
+        <>
+          <div className="bg-deep-teal/50 rounded-lg border border-accent-teal/20 p-4 mb-4">
+            <h3 className="font-display text-lg text-accent-gold mb-4">Event Preferences</h3>
+            <div className="space-y-4">
+              <PreferenceSlider 
+                label="Keynotes" 
+                defaultValue={preferences.keynotes}
+                onChange={(v) => setPreferences(p => ({ ...p, keynotes: v }))}
+              />
+              <PreferenceSlider 
+                label="Networking" 
+                defaultValue={preferences.networking}
+                onChange={(v) => setPreferences(p => ({ ...p, networking: v }))}
+              />
+              <PreferenceSlider 
+                label="Workshops" 
+                defaultValue={preferences.workshops}
+                onChange={(v) => setPreferences(p => ({ ...p, workshops: v }))}
+              />
+              <PreferenceSlider 
+                label="Panels" 
+                defaultValue={preferences.panels}
+                onChange={(v) => setPreferences(p => ({ ...p, panels: v }))}
+              />
+              <PreferenceSlider 
+                label="Tech Demos" 
+                defaultValue={preferences.demos}
+                onChange={(v) => setPreferences(p => ({ ...p, demos: v }))}
+              />
+            </div>
+            <Button 
+              onClick={handleSave}
+              className="w-full mt-4 bg-accent-gold text-charcoal border-accent-gold font-display font-bold glow-border-gold"
+              data-testid="button-save-preferences"
+            >
+              Save Preferences
+            </Button>
+          </div>
+
+          <div className="bg-deep-teal/50 rounded-lg border border-accent-teal/20 p-4">
+            <h3 className="font-display text-lg text-accent-gold mb-3">Points of Interest</h3>
+            <POIList pois={pois} />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="bg-deep-teal/50 rounded-lg border border-accent-gold/30 p-4 mb-4">
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <h3 className="font-display text-lg text-accent-gold">My Events</h3>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    size="sm"
+                    className="bg-accent-gold text-charcoal border-accent-gold font-display glow-border-gold"
+                    data-testid="button-create-event"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Create Event
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-charcoal border-accent-teal/30 max-w-[380px]">
+                  <DialogHeader>
+                    <DialogTitle className="font-display text-xl text-accent-gold">Create New Event</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="event-name" className="text-accent-teal font-display">Event Name</Label>
+                      <Input
+                        id="event-name"
+                        value={newEvent.name}
+                        onChange={(e) => setNewEvent(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Quantum Computing Workshop"
+                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        data-testid="input-event-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="event-location" className="text-accent-teal font-display flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> Location
+                      </Label>
+                      <Input
+                        id="event-location"
+                        value={newEvent.location}
+                        onChange={(e) => setNewEvent(prev => ({ ...prev, location: e.target.value }))}
+                        placeholder="Innovation Lab, L3"
+                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        data-testid="input-event-location"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="event-time" className="text-accent-teal font-display flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> Date & Time
+                      </Label>
+                      <Input
+                        id="event-time"
+                        value={newEvent.time}
+                        onChange={(e) => setNewEvent(prev => ({ ...prev, time: e.target.value }))}
+                        placeholder="Dec 16, 14:00"
+                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        data-testid="input-event-time"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="event-date" className="text-accent-teal font-display">Date (day number)</Label>
+                      <Input
+                        id="event-date"
+                        type="number"
+                        value={newEvent.date}
+                        onChange={(e) => setNewEvent(prev => ({ ...prev, date: parseInt(e.target.value) || 15 }))}
+                        placeholder="16"
+                        min={15}
+                        max={31}
+                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        data-testid="input-event-date"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="event-tags" className="text-accent-teal font-display flex items-center gap-1">
+                        <Tag className="w-3 h-3" /> Tags (comma separated)
+                      </Label>
+                      <Input
+                        id="event-tags"
+                        value={newEvent.tags}
+                        onChange={(e) => setNewEvent(prev => ({ ...prev, tags: e.target.value }))}
+                        placeholder="Workshop, Quantum, Tech"
+                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        data-testid="input-event-tags"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleCreateEvent}
+                      className="w-full bg-accent-gold text-charcoal border-accent-gold font-display font-bold glow-border-gold"
+                      data-testid="button-submit-event"
+                    >
+                      Create Event
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {myEvents.length === 0 ? (
+              <p className="text-text-secondary text-sm text-center py-6">
+                You haven't created any events yet. Click "Create Event" to get started.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {myEvents.map(event => (
+                  <div 
+                    key={event.id} 
+                    className="bg-charcoal/50 rounded-lg p-3 border border-accent-teal/20"
+                    data-testid={`card-my-event-${event.id}`}
+                  >
+                    <h4 className="font-display text-accent-gold font-semibold">{event.name}</h4>
+                    <p className="text-xs text-text-secondary mt-1 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {event.location}
+                    </p>
+                    <p className="text-xs text-accent-teal mt-1 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> {event.time}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {event.tags.map(tag => (
+                        <Badge key={tag} variant="outline" className="text-xs border-accent-teal/50 text-accent-teal">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-deep-teal/50 rounded-lg border border-accent-teal/20 p-4">
+            <h3 className="font-display text-lg text-accent-gold mb-3">Organizer Tips</h3>
+            <ul className="text-sm text-text-secondary space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="text-accent-teal">1.</span>
+                Create events with clear titles and detailed locations.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-accent-teal">2.</span>
+                Add relevant tags to help attendees discover your events.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-accent-teal">3.</span>
+                Your events will appear in the discovery flow for all attendees.
+              </li>
+            </ul>
+          </div>
+        </>
+      )}
     </div>
   );
 }

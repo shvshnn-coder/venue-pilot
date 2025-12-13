@@ -9,6 +9,7 @@ export interface Event {
   recommended: boolean;
   swiped: 'left' | 'right' | null;
   date: number;
+  isUserCreated?: boolean;
 }
 
 export interface Attendee {
