@@ -13,6 +13,7 @@ interface SwipeCardProps {
   stackIndex: number;
   onSwipe: (id: string, direction: 'left' | 'right') => void;
   initials?: string;
+  topCardDragging?: boolean;
 }
 
 export default function SwipeCard({
@@ -25,7 +26,8 @@ export default function SwipeCard({
   isTop,
   stackIndex,
   onSwipe,
-  initials
+  initials,
+  topCardDragging = false
 }: SwipeCardProps) {
   const [dragState, setDragState] = useState({ x: 0, y: 0, isDragging: false });
   const [swipeOpacity, setSwipeOpacity] = useState({ left: 0, right: 0 });
@@ -81,7 +83,7 @@ export default function SwipeCard({
 
   const getOpacity = () => {
     if (!isTop) {
-      return 0;
+      return stackIndex === 1 && topCardDragging ? 1 : 0;
     }
     return 1;
   };
