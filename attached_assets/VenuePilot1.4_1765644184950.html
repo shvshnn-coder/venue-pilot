@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA - Event Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-charcoal: #0B121A;
+            --color-deep-teal: #0E2A3A;
+            --color-accent-teal: #64FFDA;
+            --color-accent-gold: #FFD700;
+            --color-muted-gold: #D4AF37;
+            --color-text-primary: #EAF1FF;
+            --color-text-secondary: #a0b8d3;
+        }
+
+        /* Scrollbar Styling for a futuristic look */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--color-charcoal);
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--color-deep-teal);
+            border-radius: 6px;
+            border: 1px solid var(--color-accent-teal);
+        }
+
+        /* Blueprint Grid Background */
+        body {
+            background-color: var(--color-charcoal);
+            background-image:
+                linear-gradient(rgba(100, 255, 218, 0.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100, 255, 218, 0.07) 1px, transparent 1px);
+            background-size: 2rem 2rem;
+        }
+        
+        .main-container {
+            background: radial-gradient(circle at 50% 100%, rgba(14, 42, 58, 0.5), transparent 70%);
+        }
+
+        /* Glowing Effects */
+        .glow-text-gold {
+            text-shadow: 0 0 5px var(--color-accent-gold), 0 0 10px var(--color-accent-gold);
+        }
+        .glow-text-teal {
+            text-shadow: 0 0 5px var(--color-accent-teal), 0 0 10px var(--color-accent-teal);
+        }
+        .glow-border-teal {
+            box-shadow: 0 0 10px rgba(100, 255, 218, 0.3), 0 0 20px rgba(100, 255, 218, 0.2), inset 0 0 5px rgba(100, 255, 218, 0.2);
+        }
+        .glow-border-gold {
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3), 0 0 20px rgba(255, 215, 0, 0.2), inset 0 0 5px rgba(255, 215, 0, 0.2);
+        }
+
+        /* Card Stack Styling */
+        .card-stack .card {
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s;
+            cursor: grab;
+            touch-action: none;
+            will-change: transform;
+        }
+        .card-stack .card:not(.top-card) {
+            pointer-events: none;
+        }
+        .card-stack .card:nth-of-type(2) {
+            transform: translateY(10px) scale(0.95);
+            opacity: 0.8;
+            filter: blur(1px);
+        }
+        .card-stack .card:nth-of-type(3) {
+            transform: translateY(20px) scale(0.9);
+            opacity: 0.6;
+            filter: blur(2px);
+        }
+        .card-stack .card:nth-of-type(n+4) {
+            transform: translateY(30px) scale(0.85);
+            opacity: 0;
+        }
+        .card.dragging {
+            transition: none;
+        }
+        .swipe-indicator {
+            transition: opacity 0.2s ease-in-out;
+        }
+        
+        /* Profile Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 2px;
+            cursor: pointer;
+            background: var(--color-deep-teal);
+            border: 1px solid var(--color-accent-teal);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--color-accent-gold);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 5px var(--color-accent-gold), 0 0 10px var(--color-accent-gold);
+        }
+
+        /* Screen Transitions */
+        .screen {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="font-body text-text-primary antialiased">
+    
+    <div id="app-container" class="main-container relative mx-auto h-screen max-h-[900px] w-full max-w-[420px] overflow-hidden rounded-lg bg-charcoal shadow-2xl shadow-deep-teal/50 flex flex-col">
+        
+        <!-- Header -->
+        <header class="flex-shrink-0 p-4 border-b border-accent-teal/20 flex justify-between items-center z-20">
+            <h1 class="font-display text-2xl font-bold tracking-widest text-accent-gold glow-text-gold">AURA</h1>
+            <div class="flex items-center space-x-3">
+                <span class="font-body text-sm text-text-secondary">A Das</span>
+                <div class="w-8 h-8 rounded-full border-2 border-accent-gold bg-deep-teal glow-border-gold flex items-center justify-center text-accent-gold font-bold">AD</div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow overflow-y-auto relative">
+            <div id="home-screen" class="screen p-4 h-full flex flex-col"></div>
+            <div id="discover-screen" class="screen p-4 h-full flex flex-col hidden"></div>
+            <div id="calendar-screen" class="screen p-4 h-full flex flex-col hidden"></div>
+            <div id="attendees-screen" class="screen p-4 h-full flex flex-col hidden"></div>
+            <div id="profile-screen" class="screen p-4 h-full flex flex-col hidden"></div>
+        </main>
+
+        <!-- Navigation -->
+        <nav class="flex-shrink-0 bg-charcoal/80 backdrop-blur-sm border-t border-accent-teal/20 grid grid-cols-5 gap-2 p-2 z-20">
+            <button data-screen="home-screen" class="nav-item active flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span class="text-xs mt-1">Home</span>
+            </button>
+            <button data-screen="discover-screen" class="nav-item flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span class="text-xs mt-1">Discover</span>
+            </button>
+            <button data-screen="calendar-screen" class="nav-item flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span class="text-xs mt-1">Calendar</span>
+            </button>
+            <button data-screen="attendees-screen" class="nav-item flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span class="text-xs mt-1">Attendees</span>
+            </button>
+            <button data-screen="profile-screen" class="nav-item flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span class="text-xs mt-1">Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // --- TAILWIND CONFIG ---
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'charcoal': 'var(--color-charcoal)',
+                        'deep-teal': 'var(--color-deep-teal)',
+                        'accent-teal': 'var(--color-accent-teal)',
+                        'accent-gold': 'var(--color-accent-gold)',
+                        'muted-gold': 'var(--color-muted-gold)',
+                        'text-primary': 'var(--color-text-primary)',
+                        'text-secondary': 'var(--color-text-secondary)',
+                    },
+                    fontFamily: {
+                        'body': ['Outfit', 'sans-serif'],
+                        'display': ['Rajdhani', 'sans-serif'],
+                    }
+                }
+            }
+        }
+
+        // --- MOCK DATA ---
+        const AppData = {
+            user: {
+                name: "A Das",
+                role: "Lead AI Architect & Visionary, Synergistic Dynamics",
+                tagline: "Pioneering ethical AI frameworks for a hyper-connected future."
+            },
+            events: [
+                { id: 'evt1', name: "Quantum Leap Keynote", location: "Grand Auditorium, L5, Nexus Tower", time: "Dec 15, 09:00", tags: ["Keynote", "Quantum"], recommended: true, swiped: null, date: 15 },
+                { id: 'evt2', name: "AI Ethics & Governance Panel", location: "Hall of Wisdom, L3", time: "Dec 15, 14:00", tags: ["AI", "Ethics", "Panel"], recommended: true, swiped: null, date: 15 },
+                { id: 'evt3', name: "Executive Networking Mixer", location: "Zenith Lounge, Rooftop", time: "Dec 16, 18:00", tags: ["Networking"], recommended: true, swiped: null, date: 16 },
+                { id: 'evt4', name: "Future of Biotech Startup Pitches", location: "Innovation Labs, L2", time: "Dec 17, 11:00", tags: ["Biotech", "Startups", "Investment"], recommended: true, swiped: null, date: 17 },
+                { id: 'evt5', name: "Digital Art & AI Exhibition", location: "Cultural Atrium, L1", time: "Dec 16, 10:00-18:00", tags: ["Art", "Social"], recommended: false, swiped: null, date: 16 },
+                { id: 'evt6', name: "Intro to Spatial Computing Workshop", location: "Synthesis Pods, L4", time: "Dec 15, 16:00", tags: ["Workshop", "Spatial"], recommended: false, swiped: null, date: 15 },
+                { id: 'evt7', name: "The Sentient City: Tech Demo", location: "Data Stream Expo, L1", time: "Dec 17, 15:00", tags: ["Demo", "Smart Cities"], recommended: false, swiped: null, date: 17 },
+            ],
+            pois: [
+                { name: "The Quantum Cafe", type: "Refreshment", desc: "Coffee and conversations near the Grand Auditorium." },
+                { name: "Zenith Lounge", type: "Networking Hub", desc: "Exclusive rooftop venue for executive mixers." },
+                { name: "Synthesis Co-Working Pods", type: "Workspace", desc: "Quiet pods for focused work or small meetings." },
+                { name: "Data Stream Expo", type: "Exhibition", desc: "Showcase of the latest in data visualization tech." },
+            ],
+            attendees: [
+                { id: 'att1', name: "Dr. Elara Vance", role: "CSO, Chronos Labs", bio: "Temporal data analysis, predictive modeling.", tags: ["#PredictiveAnalytics", "#DeepTech"], recommended: true, swiped: null },
+                { id: 'att2', name: "Julian Thorne", role: "Venture Partner, Aurora Ventures", bio: "Investing in early-stage AI/sustainable energy.", tags: ["#VentureCapital", "#ImpactInvesting"], recommended: true, swiped: null },
+                { id: 'att3', name: "Lena Petrova", role: "Lead Data Ethicist, Global AI Council", bio: "Policy for responsible AI.", tags: ["#AIEthics", "#Policy"], recommended: true, swiped: null },
+                { id: 'att4', name: "Marcus Chen", role: "CEO, Synapse Robotics", bio: "Autonomous systems for industrial environments.", tags: ["#Robotics", "#Automation"], recommended: true, swiped: null },
+                { id: 'att5', name: "Anya Sharma", role: "Product Architect, OmniCorp", bio: "UI for enterprise quantum computing.", tags: ["#QuantumUI", "#ProductStrategy"], recommended: true, swiped: null },
+                { id: 'att6', name: "Kenji Tanaka", role: "Founder, NeuroForge", bio: "Brain-computer interface tech.", tags: ["#BCI", "#NeuroTech"], recommended: true, swiped: null },
+                { id: 'att7', name: "Isabella Rossi", role: "Head of Innovation, NeoBank Digital", bio: "Digital transformation, blockchain in fintech.", tags: ["#Fintech", "#Blockchain"], recommended: false, swiped: null },
+                { id: 'att8', name: "David Lee", role: "Quantum Computing Engineer, Aperture Labs", bio: "Superconducting qubit design.", tags: ["#QuantumHardware", "#Physics"], recommended: true, swiped: null },
+                { id: 'att9', name: "Chloe Dubois", role: "UX/UI Lead, Elysium Systems", bio: "Experiences for spatial computing.", tags: ["#UXDesign", "#SpatialComputing"], recommended: false, swiped: null },
+                { id: 'att10', name: "Omar Hassan", role: "Senior Legal Counsel, TechNexus", bio: "IP and data privacy in emerging tech.", tags: ["#TechLaw", "#IPR"], recommended: false, swiped: null },
+                { id: 'att11', name: "Freya Jensen", role: "Bio-AI Researcher, Genesis Institute", bio: "ML for drug discovery.", tags: ["#Bioinformatics", "#DrugDiscovery"], recommended: true, swiped: null },
+                { id: 'att12', name: "Gabriel Soto", role: "CTO, Horizon Drones", bio: "AI-powered drones for inspection.", tags: ["#Drones", "#ComputerVision"], recommended: false, swiped: null },
+                { id: 'att13', name: "Sarah Kim", role: "Marketing Strategist, FutureBrands", bio: "Brand narratives for tech companies.", tags: ["#TechMarketing", "#BrandStrategy"], recommended: false, swiped: null },
+                { id: 'att14', name: "Raj Patel", role: "Head of Partnerships, Echo Ventures", bio: "Alliances between VCs and startups.", tags: ["#StrategicPartnerships", "#StartupEcosystem"], recommended: true, swiped: null },
+                { id: 'att15', name: "Vivian Nguyen", role: "Data Scientist, Cognitive Insights", bio: "Business intelligence from datasets.", tags: ["#DataScience", "#BigData"], recommended: false, swiped: null },
+            ],
+            // Pre-swiped data to simulate past activity
+            initialSwipes: {
+                events: { 'evt2': 'right', 'evt3': 'right', 'evt4': 'right', 'evt5': 'left' },
+                attendees: { 'att1': 'right', 'att2': 'right', 'att3': 'right', 'att4': 'right', 'att9': 'left' }
+            }
+        };
+        
+        // --- APP STATE ---
+        const AppState = {
+            currentScreen: 'home-screen',
+            events: JSON.parse(JSON.stringify(AppData.events)),
+            attendees: JSON.parse(JSON.stringify(AppData.attendees)),
+            pois: JSON.parse(JSON.stringify(AppData.pois)),
+            init() {
+                // Apply initial swipes to simulate history
+                this.events.forEach(e => {
+                    if (AppData.initialSwipes.events[e.id]) {
+                        e.swiped = AppData.initialSwipes.events[e.id];
+                    }
+                });
+                this.attendees.forEach(a => {
+                    if (AppData.initialSwipes.attendees[a.id]) {
+                        a.swiped = AppData.initialSwipes.attendees[a.id];
+                    }
+                });
+            }
+        };
+        AppState.init();
+
+        // --- CARD SWIPE LOGIC ---
+        class CardStack {
+            constructor(container, items, renderer) {
+                this.container = container;
+                this.items = items;
+                this.renderer = renderer;
+                this.topCard = null;
+                this.isDragging = false;
+                this.startPos = { x: 0, y: 0 };
+                this.currentPos = { x: 0, y: 0 };
+                this.render();
+                this.initListeners();
+            }
+
+            render() {
+                this.container.innerHTML = this.items.map((item, index) => this.renderer(item, index)).join('');
+                this.updateTopCard();
+            }
+
+            updateTopCard() {
+                const cards = this.container.querySelectorAll('.card');
+                cards.forEach(card => card.classList.remove('top-card'));
+                if (cards.length > 0) {
+                    this.topCard = cards[0];
+                    this.topCard.classList.add('top-card');
+                } else {
+                    this.topCard = null;
+                    this.container.innerHTML = `<div class="text-center text-text-secondary p-8">No more items. Check back later!</div>`;
+                }
+            }
+
+            initListeners() {
+                if (!this.topCard) return;
+                this.topCard.addEventListener('pointerdown', this.onDragStart.bind(this));
+                document.addEventListener('pointermove', this.onDragMove.bind(this));
+                document.addEventListener('pointerup', this.onDragEnd.bind(this));
+            }
+            
+            onDragStart(e) {
+                if (!this.topCard || e.target.closest('button')) return;
+                this.isDragging = true;
+                this.topCard.classList.add('dragging');
+                this.startPos = { x: e.clientX, y: e.clientY };
+                this.topCard.setPointerCapture(e.pointerId);
+            }
+
+            onDragMove(e) {
+                if (!this.isDragging || !this.topCard) return;
+                this.currentPos = { x: e.clientX, y: e.clientY };
+                const deltaX = this.currentPos.x - this.startPos.x;
+                const deltaY = this.currentPos.y - this.startPos.y;
+                const rotation = deltaX * 0.1;
+                this.topCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${rotation}deg)`;
+                
+                const swipeIndicatorRight = this.topCard.querySelector('.swipe-indicator.right');
+                const swipeIndicatorLeft = this.topCard.querySelector('.swipe-indicator.left');
+                const opacity = Math.min(Math.abs(deltaX) / (this.topCard.clientWidth / 2), 1);
+                
+                if (deltaX > 0) {
+                    swipeIndicatorRight.style.opacity = opacity;
+                    swipeIndicatorLeft.style.opacity = 0;
+                } else {
+                    swipeIndicatorLeft.style.opacity = opacity;
+                    swipeIndicatorRight.style.opacity = 0;
+                }
+            }
+
+            onDragEnd(e) {
+                if (!this.isDragging || !this.topCard) return;
+                this.isDragging = false;
+                this.topCard.classList.remove('dragging');
+                this.topCard.releasePointerCapture(e.pointerId);
+                
+                const deltaX = this.currentPos.x - this.startPos.x;
+                const decisionThreshold = this.topCard.clientWidth / 3;
+
+                if (Math.abs(deltaX) > decisionThreshold) {
+                    this.swipe(deltaX > 0 ? 'right' : 'left');
+                } else {
+                    this.resetCard();
+                }
+                
+                this.topCard.querySelector('.swipe-indicator.right').style.opacity = 0;
+                this.topCard.querySelector('.swipe-indicator.left').style.opacity = 0;
+            }
+
+            swipe(direction) {
+                if (!this.topCard) return;
+                const flyOutX = (direction === 'right' ? 1 : -1) * (window.innerWidth);
+                this.topCard.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out';
+                this.topCard.style.transform = `translate(${flyOutX}px, 0px) rotate(${flyOutX / 20}deg)`;
+                this.topCard.style.opacity = '0';
+                
+                const swipedItemId = this.topCard.dataset.id;
+                const itemType = this.topCard.dataset.type;
+                const item = (itemType === 'event' ? AppState.events : AppState.attendees).find(i => i.id === swipedItemId);
+                if (item) item.swiped = direction;
+
+                setTimeout(() => {
+                    this.topCard.remove();
+                    this.items.shift();
+                    this.updateTopCard();
+                    this.initListeners();
+                }, 500);
+            }
+
+            resetCard() {
+                if (!this.topCard) return;
+                this.topCard.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                this.topCard.style.transform = '';
+            }
+        }
+        
+        // --- SCREEN RENDERERS ---
+        const renderers = {
+            'home-screen': (container) => {
+                const unswipedItems = AppState.events.filter(e => e.swiped === null)
+                    .concat(AppState.pois)
+                    .sort((a,b) => (b.recommended === true ? 1 : -1) - (a.recommended === true ? 1 : -1)); // AI sorting
+                
+                const eventRenderer = (item, index) => `
+                    <div data-id="${item.id}" data-type="event" class="card absolute inset-0 bg-deep-teal/80 backdrop-blur-md rounded-xl border border-accent-teal/30 glow-border-teal p-4 flex flex-col justify-between" style="z-index: ${100-index};">
+                        <div class="absolute inset-0 rounded-xl overflow-hidden">
+                            <div class="absolute top-0 right-0 w-1/2 h-1/2 bg-accent-teal/5 rounded-bl-full filter blur-3xl"></div>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-display text-2xl font-bold text-accent-gold">${item.name}</h3>
+                                <div class="w-16 h-16 border border-accent-teal/50 flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-accent-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-text-secondary font-body">
+                                <p>${item.location}</p>
+                                <p class="text-accent-teal font-medium">${item.time}</p>
+                            </div>
+                        </div>
+                        <div class="relative z-10 flex space-x-2 mt-4">
+                            ${item.tags.map(tag => `<span class="bg-accent-teal/10 text-accent-teal text-xs font-bold px-3 py-1 rounded-full">${tag}</span>`).join('')}
+                        </div>
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-between w-full px-4">
+                            <div class="swipe-indicator left opacity-0 border-2 border-accent-teal text-accent-teal font-bold text-2xl px-6 py-2 rounded-lg -rotate-12">SKIP</div>
+                            <div class="swipe-indicator right opacity-0 border-2 border-muted-gold text-muted-gold font-bold text-2xl px-6 py-2 rounded-lg rotate-12">INTERESTED</div>
+                        </div>
+                    </div>`;
+
+                container.innerHTML = `
+                    <div class="flex justify-start space-x-2 mb-4">
+                        <button class="filter-chip">Today's Keynotes</button>
+                        <button class="filter-chip">Networking Tonight</button>
+                    </div>
+                    <div class="flex-grow relative card-stack"></div>
+                    <div class="flex-shrink-0 grid grid-cols-2 gap-4 mt-4">
+                        <div class="p-3 bg-deep-teal/50 rounded-lg border border-accent-teal/20 flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-charcoal rounded-md border border-accent-teal/30"></div>
+                            <div>
+                                <h4 class="font-display text-sm text-text-secondary">Mini-Map</h4>
+                                <p class="text-xs text-accent-teal">Nexus Tower, L5</p>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-deep-teal/50 rounded-lg border border-accent-teal/20">
+                             <h4 class="font-display text-sm text-text-secondary text-center">Stats</h4>
+                             <div class="flex justify-around mt-1">
+                                <div><span class="text-accent-gold font-bold text-lg">12</span> <span class="text-xs">Swiped</span></div>
+                                <div><span class="text-accent-gold font-bold text-lg">3</span> <span class="text-xs">Connections</span></div>
+                             </div>
+                        </div>
+                    </div>
+                `;
+                container.querySelector('.filter-chip').classList.add('bg-accent-gold', 'text-charcoal', 'border-accent-gold', 'font-bold', 'px-3', 'py-1', 'rounded-full', 'text-xs', 'transition', 'hover:bg-muted-gold')
+                container.querySelectorAll('.filter-chip')[1].classList.add('border', 'border-accent-teal', 'text-accent-teal', 'font-bold', 'px-3', 'py-1', 'rounded-full', 'text-xs', 'transition', 'hover:bg-accent-teal/20')
+
+                const cardContainer = container.querySelector('.card-stack');
+                new CardStack(cardContainer, AppState.events.filter(e => e.swiped === null), eventRenderer);
+            },
+            'discover-screen': (container) => {
+                 const eventRenderer = (item, index) => `
+                    <div data-id="${item.id}" data-type="event" class="card absolute inset-0 bg-deep-teal/80 backdrop-blur-md rounded-xl border border-accent-teal/30 glow-border-teal p-4 flex flex-col" style="z-index: ${100-index};">
+                         <div class="absolute inset-x-0 top-0 h-24 bg-accent-teal/5 rounded-t-xl flex items-center justify-center border-b border-accent-teal/20">
+                            <svg class="w-12 h-12 text-accent-teal opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                        <div class="mt-28 flex-grow flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-display text-3xl font-bold text-accent-gold">${item.name}</h3>
+                                <div class="mt-2 text-text-secondary font-body border-t border-b border-accent-teal/20 py-2 my-2">
+                                    <p>${item.location}</p>
+                                    <p class="text-accent-teal font-medium">${item.time}</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-4">
+                                ${item.tags.map(tag => `<span class="bg-accent-gold/10 text-accent-gold text-xs font-bold px-3 py-1 rounded-full border border-accent-gold/20">${tag}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-between w-full px-4">
+                            <div class="swipe-indicator left opacity-0 border-2 border-accent-teal text-accent-teal font-bold text-2xl px-6 py-2 rounded-lg -rotate-12">SKIP</div>
+                            <div class="swipe-indicator right opacity-0 border-2 border-muted-gold text-muted-gold font-bold text-2xl px-6 py-2 rounded-lg rotate-12">INTERESTED</div>
+                        </div>
+                    </div>`;
+
+                container.innerHTML = `
+                    <div class="flex justify-center space-x-2 mb-4">
+                        <button class="filter-button">Category</button>
+                        <button class="filter-button">Time</button>
+                        <button class="filter-button">Type</button>
+                    </div>
+                    <div class="flex-grow relative card-stack"></div>
+                `;
+                container.querySelectorAll('.filter-button').forEach(btn => btn.classList.add('border', 'border-accent-teal', 'text-accent-teal', 'glow-text-teal', 'font-display', 'font-bold', 'px-4', 'py-1', 'rounded-md', 'transition', 'hover:bg-accent-teal/20', 'hover:text-white'));
+                const cardContainer = container.querySelector('.card-stack');
+                new CardStack(cardContainer, AppState.events.filter(e => e.swiped === null), eventRenderer);
+            },
+            'calendar-screen': (container) => {
+                const likedEvents = AppState.events.filter(e => e.swiped === 'right');
+                const eventDates = [...new Set(likedEvents.map(e => e.date))];
+
+                let calendarHtml = '';
+                const daysInMonth = 31;
+                const firstDayOffset = 4; // Dec 1st is a Friday
+                for(let i=0; i < firstDayOffset; i++) {
+                    calendarHtml += '<div></div>';
+                }
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const hasEvent = eventDates.includes(day);
+                    calendarHtml += `<div class="h-10 flex items-center justify-center text-sm relative ${hasEvent ? 'text-accent-gold font-bold' : 'text-text-secondary'}">${day}${hasEvent ? '<div class="absolute bottom-1 w-1.5 h-1.5 bg-accent-gold rounded-full glow-text-gold"></div>' : ''}</div>`;
+                }
+
+                container.innerHTML = `
+                    <div class="p-4 bg-deep-teal/50 rounded-lg border border-accent-teal/20">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-display text-xl text-accent-gold">December 2023</h3>
+                        </div>
+                        <div class="grid grid-cols-7 text-center text-xs text-text-secondary mb-2">
+                            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                        </div>
+                        <div class="grid grid-cols-7 text-center">
+                            ${calendarHtml}
+                        </div>
+                    </div>
+                    <div class="mt-4 flex-grow flex flex-col">
+                        <h3 class="font-display text-lg text-accent-teal text-center mb-2">Interested Events: Dec 15</h3>
+                        <div class="flex-grow relative card-stack" id="calendar-mini-deck"></div>
+                    </div>
+                `;
+
+                const eventRenderer = (item, index) => `
+                     <div data-id="${item.id}" data-type="event" class="card absolute inset-0 bg-deep-teal/80 backdrop-blur-md rounded-xl border border-accent-teal/30 p-4 flex flex-col justify-between" style="z-index: ${100-index};">
+                        <div>
+                            <h3 class="font-display text-xl font-bold text-accent-gold">${item.name}</h3>
+                            <p class="text-sm text-text-secondary">${item.location}</p>
+                        </div>
+                        <p class="text-accent-teal font-medium self-end">${item.time}</p>
+                    </div>
+                `;
+                const miniDeckContainer = container.querySelector('#calendar-mini-deck');
+                new CardStack(miniDeckContainer, likedEvents.filter(e => e.date === 15), eventRenderer);
+            },
+            'attendees-screen': (container) => {
+                const unswipedAttendees = AppState.attendees.filter(a => a.swiped === null)
+                    .sort((a,b) => (b.recommended === true ? 1 : -1) - (a.recommended === true ? 1 : -1));
+
+                const attendeeRenderer = (item, index) => `
+                     <div data-id="${item.id}" data-type="attendee" class="card absolute inset-0 bg-deep-teal/80 backdrop-blur-md rounded-xl border border-accent-teal/30 glow-border-teal p-6 flex flex-col justify-center text-center" style="z-index: ${100-index};">
+                         <div class="flex-grow flex flex-col items-center justify-center">
+                            <div class="w-24 h-24 rounded-full border-2 border-accent-gold bg-charcoal mb-4 glow-border-gold flex items-center justify-center font-display text-4xl text-accent-gold">${item.name.split(' ').map(n=>n[0]).join('')}</div>
+                            <h3 class="font-display text-2xl font-bold text-accent-gold">${item.name}</h3>
+                            <p class="text-accent-teal">${item.role}</p>
+                            <p class="text-text-secondary mt-4 text-sm max-w-xs mx-auto">"${item.bio}"</p>
+                        </div>
+                        <div class="flex-shrink-0 flex flex-wrap justify-center gap-2 mt-4">
+                           ${item.tags.map(tag => `<span class="bg-accent-teal/10 text-accent-teal text-xs font-bold px-3 py-1 rounded-full">${tag}</span>`).join('')}
+                        </div>
+                         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-between w-full px-4">
+                            <div class="swipe-indicator left opacity-0 border-2 border-accent-teal text-accent-teal font-bold text-2xl px-6 py-2 rounded-lg -rotate-12">SKIP</div>
+                            <div class="swipe-indicator right opacity-0 border-2 border-muted-gold text-muted-gold font-bold text-2xl px-6 py-2 rounded-lg rotate-12">CONNECT</div>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = `<div class="flex-grow relative card-stack"></div>`;
+                const cardContainer = container.querySelector('.card-stack');
+                new CardStack(cardContainer, unswipedAttendees, attendeeRenderer);
+            },
+            'profile-screen': (container) => {
+                container.innerHTML = `
+                 <div class="space-y-6 overflow-y-auto h-full pb-8">
+                    <!-- User Info -->
+                    <div class="text-center p-4 rounded-lg bg-deep-teal/50 border border-accent-teal/20">
+                        <h2 class="font-display text-3xl font-bold text-accent-gold glow-text-gold">${AppData.user.name}</h2>
+                        <p class="text-accent-teal mt-1">${AppData.user.role}</p>
+                        <p class="text-text-secondary mt-2 text-sm">"${AppData.user.tagline}"</p>
+                    </div>
+                    
+                    <!-- Preferences -->
+                    <div class="p-4 rounded-lg bg-deep-teal/50 border border-accent-teal/20">
+                        <h3 class="font-display text-xl text-accent-teal mb-4">Preferences</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-sm text-text-secondary">Event Types: Keynotes</label>
+                                <input type="range" min="0" max="100" value="90" />
+                            </div>
+                            <div>
+                                <label class="text-sm text-text-secondary">Networking: Executive Mixers</label>
+                                <input type="range" min="0" max="100" value="85" />
+                            </div>
+                            <div>
+                                <label class="text-sm text-text-secondary">Crowd Size: Focused Discussions</label>
+                                <input type="range" min="0" max="100" value="70" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Interests -->
+                    <div class="p-4 rounded-lg bg-deep-teal/50 border border-accent-teal/20">
+                        <h3 class="font-display text-xl text-accent-teal mb-4">Interests</h3>
+                        <div class="flex flex-wrap gap-2">
+                           <span class="interest-tag">Strategic Partnerships</span>
+                           <span class="interest-tag">Talent Acquisition</span>
+                           <span class="interest-tag">Investment Opportunities</span>
+                           <span class="interest-tag">Meaningful Connections</span>
+                           <span class="interest-tag">Future-Forward Design</span>
+                        </div>
+                    </div>
+
+                    <!-- Swipe History Visualizations -->
+                    <div class="p-4 rounded-lg bg-deep-teal/50 border border-accent-teal/20">
+                        <h3 class="font-display text-xl text-accent-teal mb-4">Interaction History</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <h4 class="text-sm text-text-secondary mb-2">Event Interest Profile</h4>
+                                <div class="space-y-2">
+                                    <div class="flex items-center"><span class="w-24 text-xs">AI/Ethics</span><div class="flex-grow h-2 bg-charcoal rounded-full"><div class="h-full bg-accent-gold rounded-full" style="width: 90%;"></div></div></div>
+                                    <div class="flex items-center"><span class="w-24 text-xs">Quantum</span><div class="flex-grow h-2 bg-charcoal rounded-full"><div class="h-full bg-accent-gold rounded-full" style="width: 80%;"></div></div></div>
+                                    <div class="flex items-center"><span class="w-24 text-xs">Networking</span><div class="flex-grow h-2 bg-charcoal rounded-full"><div class="h-full bg-accent-gold rounded-full" style="width: 85%;"></div></div></div>
+                                    <div class="flex items-center"><span class="w-24 text-xs">Startups</span><div class="flex-grow h-2 bg-charcoal rounded-full"><div class="h-full bg-accent-gold rounded-full" style="width: 70%;"></div></div></div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-sm text-text-secondary mb-2">Connection Network</h4>
+                                <svg viewBox="0 0 200 100" class="w-full h-auto">
+                                    <defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--color-accent-teal)" /></marker></defs>
+                                    <circle cx="100" cy="50" r="15" fill="var(--color-accent-gold)" />
+                                    <text x="100" y="53" font-family="Outfit" font-size="8" fill="var(--color-charcoal)" text-anchor="middle">You</text>
+                                    
+                                    <g><circle cx="20" cy="20" r="10" fill="var(--color-deep-teal)" stroke="var(--color-accent-teal)" /><text x="20" y="23" font-size="6" fill="var(--color-text-primary)" text-anchor="middle">CSO</text><line x1="88" y1="42" x2="30" y2="25" stroke="var(--color-accent-teal)" stroke-width="0.5" /></g>
+                                    <g><circle cx="50" cy="80" r="10" fill="var(--color-deep-teal)" stroke="var(--color-accent-teal)" /><text x="50" y="83" font-size="6" fill="var(--color-text-primary)" text-anchor="middle">VC</text><line x1="90" y1="58" x2="58" y2="75" stroke="var(--color-accent-teal)" stroke-width="0.5" /></g>
+                                    <g><circle cx="150" cy="80" r="10" fill="var(--color-deep-teal)" stroke="var(--color-accent-teal)" /><text x="150" y="83" font-size="6" fill="var(--color-text-primary)" text-anchor="middle">CEO</text><line x1="110" y1="58" x2="142" y2="75" stroke="var(--color-accent-teal)" stroke-width="0.5" /></g>
+                                    <g><circle cx="180" cy="20" r="10" fill="var(--color-deep-teal)" stroke="var(--color-accent-teal)" /><text x="180" y="23" font-size="6" fill="var(--color-text-primary)" text-anchor="middle">Ethicist</text><line x1="112" y1="42" x2="170" y2="25" stroke="var(--color-accent-teal)" stroke-width="0.5" /></g>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+                container.querySelectorAll('.interest-tag').forEach(tag => tag.classList.add('bg-accent-gold/10', 'text-accent-gold', 'text-xs', 'font-bold', 'px-3', 'py-1.5', 'rounded-full', 'border', 'border-accent-gold/30'));
+            }
+        }
+        
+        // --- NAVIGATION LOGIC ---
+        const navItems = document.querySelectorAll('.nav-item');
+        const screens = document.querySelectorAll('.screen');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const targetScreenId = item.dataset.screen;
+                
+                // Update nav item styles
+                navItems.forEach(nav => nav.classList.remove('active', 'text-accent-gold', 'glow-text-gold'));
+                item.classList.add('active', 'text-accent-gold', 'glow-text-gold');
+                
+                // Switch screens
+                screens.forEach(screen => {
+                    if (screen.id === targetScreenId) {
+                        screen.classList.remove('hidden');
+                        renderers[screen.id](screen); // Re-render screen on navigation
+                    } else {
+                        screen.classList.add('hidden');
+                    }
+                });
+                
+                AppState.currentScreen = targetScreenId;
+            });
+        });
+
+        // --- INITIALIZE APP ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialScreen = document.getElementById(AppState.currentScreen);
+            renderers[AppState.currentScreen](initialScreen);
+
+            // Set initial active nav item style
+            document.querySelector('.nav-item.active').classList.add('text-accent-gold', 'glow-text-gold');
+        });
+
+    </script>
+</body>
+</html>
