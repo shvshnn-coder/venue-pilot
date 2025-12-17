@@ -10,22 +10,28 @@ import DiscoverScreen from "@/components/screens/DiscoverScreen";
 import CalendarScreen from "@/components/screens/CalendarScreen";
 import AttendeesScreen from "@/components/screens/AttendeesScreen";
 import ProfileScreen from "@/components/screens/ProfileScreen";
+import SplashScreen from "@/components/screens/SplashScreen";
+import SignUpScreen from "@/components/screens/SignUpScreen";
 import { 
   mockUser, 
   mockEvents, 
   mockAttendees, 
   mockPOIs,
   Event,
-  Attendee
+  Attendee,
+  User
 } from "@/lib/mockData";
 
 export type ProfileMode = 'attendee' | 'organizer';
+type AppState = 'splash' | 'signup' | 'main';
 
 function AuraApp() {
+  const [appState, setAppState] = useState<AppState>('splash');
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [events, setEvents] = useState<Event[]>(mockEvents); // todo: remove mock functionality
   const [attendees, setAttendees] = useState<Attendee[]>(mockAttendees); // todo: remove mock functionality
   const [profileMode, setProfileMode] = useState<ProfileMode>('attendee');
+  const [currentUser, setCurrentUser] = useState<User>(mockUser);
 
   const handleEventSwipe = (id: string, direction: 'left' | 'right') => {
     setEvents(prev => prev.map(e => e.id === id ? { ...e, swiped: direction } : e));
@@ -58,7 +64,7 @@ function AuraApp() {
       case 'profile':
         return (
           <ProfileScreen 
-            user={mockUser} 
+            user={currentUser} 
             pois={mockPOIs} 
             mode={profileMode}
             onModeChange={setProfileMode}
@@ -71,6 +77,37 @@ function AuraApp() {
     }
   };
 
+  const handleSignUpComplete = (userData: { name: string; avatar?: string }) => {
+    setCurrentUser({
+      name: userData.name,
+      role: "Event Enthusiast",
+      tagline: "Discovering amazing experiences"
+    });
+    setAppState('main');
+  };
+
+  if (appState === 'splash') {
+    return (
+      <div 
+        className="relative mx-auto h-screen max-h-[900px] w-full max-w-[420px] overflow-hidden rounded-lg shadow-2xl shadow-deep-teal/50"
+        data-testid="container-splash"
+      >
+        <SplashScreen onComplete={() => setAppState('signup')} />
+      </div>
+    );
+  }
+
+  if (appState === 'signup') {
+    return (
+      <div 
+        className="relative mx-auto h-screen max-h-[900px] w-full max-w-[420px] overflow-hidden rounded-lg shadow-2xl shadow-deep-teal/50"
+        data-testid="container-signup"
+      >
+        <SignUpScreen onComplete={handleSignUpComplete} />
+      </div>
+    );
+  }
+
   return (
     <div 
       className="relative mx-auto h-screen max-h-[900px] w-full max-w-[420px] overflow-hidden rounded-lg shadow-2xl shadow-deep-teal/50 flex flex-col"
@@ -79,7 +116,7 @@ function AuraApp() {
       }}
       data-testid="container-app"
     >
-      <AppHeader user={mockUser} />
+      <AppHeader user={currentUser} />
       <main className="flex-grow overflow-hidden relative">
         {renderScreen()}
       </main>
