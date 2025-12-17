@@ -23,8 +23,8 @@ export default function FilterChips({ filters, onFilterChange }: FilterChipsProp
             onClick={() => handleClick(filter)}
             className={`font-bold px-3 py-1 rounded-full text-xs transition ${
               isActive
-                ? 'bg-accent-gold text-charcoal border border-accent-gold'
-                : 'border border-accent-teal text-accent-teal hover:bg-accent-teal/20'
+                ? 'bg-theme-highlight text-theme-surface border border-theme-highlight'
+                : 'border border-theme-accent text-theme-accent hover:bg-theme-accent/20'
             }`}
             data-testid={`button-filter-${filter.toLowerCase().replace(/\s+/g, '-')}`}
           >

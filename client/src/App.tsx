@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import AppHeader from "@/components/AppHeader";
 import BottomNav, { Screen } from "@/components/BottomNav";
 import HomeScreen from "@/components/screens/HomeScreen";
@@ -112,7 +113,7 @@ function AuraApp() {
     <div 
       className="relative mx-auto h-screen max-h-[900px] w-full max-w-[420px] overflow-hidden rounded-lg shadow-2xl shadow-deep-teal/50 flex flex-col"
       style={{
-        background: 'radial-gradient(circle at 50% 100%, hsla(195, 60%, 10%, 0.5), transparent 70%), hsl(210, 45%, 6%)'
+        background: 'var(--app-gradient)'
       }}
       data-testid="container-app"
     >
@@ -128,12 +129,14 @@ function AuraApp() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <AuraApp />
-        </div>
-        <Toaster />
-      </TooltipProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <AuraApp />
+          </div>
+          <Toaster />
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

@@ -34,8 +34,8 @@ export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenP
           size="sm"
           onClick={() => setViewMode('discover')}
           className={viewMode === 'discover' 
-            ? 'bg-accent-gold text-charcoal border-accent-gold' 
-            : 'border-accent-teal text-accent-teal'}
+            ? 'bg-theme-highlight text-theme-surface border-theme-highlight' 
+            : 'border-theme-accent text-theme-accent'}
           data-testid="button-view-discover"
         >
           Discover
@@ -45,8 +45,8 @@ export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenP
           size="sm"
           onClick={() => setViewMode('connections')}
           className={viewMode === 'connections' 
-            ? 'bg-accent-gold text-charcoal border-accent-gold' 
-            : 'border-accent-teal text-accent-teal'}
+            ? 'bg-theme-highlight text-theme-surface border-theme-highlight' 
+            : 'border-theme-accent text-theme-accent'}
           data-testid="button-view-connections"
         >
           Connections ({connections.length})
@@ -64,7 +64,7 @@ export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenP
       ) : (
         <div className="flex-grow overflow-y-auto space-y-3">
           {connections.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-text-secondary text-center p-8">
+            <div className="flex items-center justify-center h-full text-theme-text-muted text-center p-8">
               No connections yet. Swipe right on attendees you'd like to connect with!
             </div>
           ) : (
@@ -73,21 +73,21 @@ export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenP
               return (
                 <div 
                   key={attendee.id}
-                  className="p-4 bg-deep-teal/80 backdrop-blur-md rounded-xl border border-accent-teal/30 flex items-center gap-4 hover-elevate"
+                  className="p-4 bg-theme-card/80 backdrop-blur-md rounded-xl border border-theme-accent/30 flex items-center gap-4 hover-elevate"
                   data-testid={`card-connection-${attendee.id}`}
                 >
-                  <div className="w-14 h-14 rounded-full border-2 border-accent-gold bg-charcoal flex items-center justify-center font-display text-xl text-accent-gold flex-shrink-0">
+                  <div className="w-14 h-14 rounded-full border-2 border-theme-highlight bg-theme-surface flex items-center justify-center font-display text-xl text-theme-highlight flex-shrink-0">
                     {initials}
                   </div>
                   <div className="flex-grow min-w-0">
-                    <h4 className="font-display text-lg text-accent-gold truncate">{attendee.name}</h4>
-                    <p className="text-sm text-accent-teal truncate">{attendee.role}</p>
+                    <h4 className="font-display text-lg text-theme-highlight truncate">{attendee.name}</h4>
+                    <p className="text-sm text-theme-accent truncate">{attendee.role}</p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {attendee.tags.slice(0, 2).map(tag => (
                         <Badge 
                           key={tag}
                           variant="outline"
-                          className="bg-accent-teal/10 text-accent-teal border-accent-teal/30 text-xs"
+                          className="bg-theme-accent/10 text-theme-accent border-theme-accent/30 text-xs"
                         >
                           {tag}
                         </Badge>
@@ -95,7 +95,7 @@ export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenP
                     </div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                    <Button size="icon" variant="outline" className="border-accent-teal text-accent-teal" data-testid={`button-message-${attendee.id}`}>
+                    <Button size="icon" variant="outline" className="border-theme-accent text-theme-accent" data-testid={`button-message-${attendee.id}`}>
                       <Check className="w-4 h-4" />
                     </Button>
                   </div>

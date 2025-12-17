@@ -28,22 +28,22 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
     <div 
       className="h-screen w-full flex flex-col items-center justify-center"
       style={{
-        background: 'radial-gradient(circle at 50% 50%, hsla(195, 60%, 15%, 0.8), transparent 60%), hsl(210, 45%, 6%)'
+        background: 'var(--app-gradient)'
       }}
       data-testid="screen-splash"
     >
       <div className="relative">
-        <div className="absolute -inset-20 bg-accent-teal/10 rounded-full blur-3xl animate-pulse" />
-        <h1 className="font-display text-4xl font-bold text-accent-gold glow-text-gold relative z-10">
+        <div className="absolute -inset-20 bg-theme-accent/10 rounded-full blur-3xl animate-pulse" />
+        <h1 className="font-display text-4xl font-bold text-theme-highlight glow-text-gold relative z-10">
           AURA
         </h1>
       </div>
       
       <div className="mt-12 flex items-baseline">
-        <span className="font-display text-2xl text-accent-teal glow-text-teal">
+        <span className="font-display text-2xl text-theme-accent glow-text-teal">
           This way
         </span>
-        <span className="font-display text-2xl text-accent-teal glow-text-teal w-8">
+        <span className="font-display text-2xl text-theme-accent glow-text-teal w-8">
           {dots}
         </span>
       </div>
@@ -53,7 +53,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           <div
             key={i}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              i < dotCount ? 'bg-accent-gold glow-border-gold' : 'bg-accent-teal/30'
+              i < dotCount ? 'bg-theme-highlight glow-border-gold' : 'bg-theme-accent/30'
             }`}
             style={{
               animationDelay: `${i * 0.15}s`

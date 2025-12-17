@@ -81,6 +81,12 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        "theme-surface": "hsl(var(--color-charcoal) / <alpha-value>)",
+        "theme-card": "hsl(var(--color-deep-teal) / <alpha-value>)",
+        "theme-accent": "hsl(var(--color-accent-teal) / <alpha-value>)",
+        "theme-highlight": "hsl(var(--color-accent-gold) / <alpha-value>)",
+        "theme-text": "hsl(var(--color-text-primary) / <alpha-value>)",
+        "theme-text-muted": "hsl(var(--color-text-secondary) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-sans)"],

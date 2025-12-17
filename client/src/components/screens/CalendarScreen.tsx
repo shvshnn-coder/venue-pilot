@@ -27,12 +27,12 @@ export default function CalendarScreen({ events }: CalendarScreenProps) {
       />
       
       <div className="mt-4 flex-grow flex flex-col">
-        <h3 className="font-display text-lg text-accent-teal text-center mb-3">
+        <h3 className="font-display text-lg text-theme-accent text-center mb-3">
           {selectedDate ? `Interested Events: Dec ${selectedDate}` : 'Select a date with events'}
         </h3>
         
         {eventsForDate.length === 0 ? (
-          <div className="flex-grow flex items-center justify-center text-text-secondary text-center p-4">
+          <div className="flex-grow flex items-center justify-center text-theme-text-muted text-center p-4">
             {selectedDate 
               ? 'No events for this date yet. Swipe right on events to add them!'
               : 'Swipe right on events you\'re interested in to see them here.'
@@ -43,15 +43,15 @@ export default function CalendarScreen({ events }: CalendarScreenProps) {
             {eventsForDate.map(event => (
               <div 
                 key={event.id}
-                className="p-4 bg-deep-teal/80 backdrop-blur-md rounded-xl border border-accent-teal/30 hover-elevate"
+                className="p-4 bg-theme-card/80 backdrop-blur-md rounded-xl border border-theme-accent/30 hover-elevate"
                 data-testid={`card-calendar-event-${event.id}`}
               >
-                <h4 className="font-display text-lg font-bold text-accent-gold">{event.name}</h4>
-                <div className="flex items-center gap-2 mt-2 text-text-secondary text-sm">
-                  <MapPin className="w-4 h-4 text-accent-teal" />
+                <h4 className="font-display text-lg font-bold text-theme-highlight">{event.name}</h4>
+                <div className="flex items-center gap-2 mt-2 text-theme-text-muted text-sm">
+                  <MapPin className="w-4 h-4 text-theme-accent" />
                   <span>{event.location}</span>
                 </div>
-                <div className="flex items-center gap-2 mt-1 text-accent-teal text-sm">
+                <div className="flex items-center gap-2 mt-1 text-theme-accent text-sm">
                   <Clock className="w-4 h-4" />
                   <span>{event.time}</span>
                 </div>
@@ -60,7 +60,7 @@ export default function CalendarScreen({ events }: CalendarScreenProps) {
                     <Badge 
                       key={tag}
                       variant="outline"
-                      className="bg-accent-gold/10 text-accent-gold border-accent-gold/20 text-xs"
+                      className="bg-theme-highlight/10 text-theme-highlight border-theme-highlight/20 text-xs"
                     >
                       {tag}
                     </Badge>

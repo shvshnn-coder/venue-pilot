@@ -95,7 +95,7 @@ export default function SwipeCard({
   return (
     <div
       ref={cardRef}
-      className={`absolute inset-0 bg-deep-teal rounded-xl border border-accent-teal/30 glow-border-teal p-4 flex flex-col ${
+      className={`absolute inset-0 bg-theme-card rounded-xl border border-theme-accent/30 glow-border-teal p-4 flex flex-col ${
         isTop ? 'cursor-grab' : 'pointer-events-none'
       } ${dragState.isDragging ? 'cursor-grabbing' : ''}`}
       style={{
@@ -112,29 +112,29 @@ export default function SwipeCard({
       data-testid={`card-${type}-${id}`}
     >
       <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-accent-teal/5 rounded-bl-full blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-theme-accent/5 rounded-bl-full blur-3xl"></div>
       </div>
 
       {type === 'attendee' && initials ? (
         <div className="flex-grow flex flex-col items-center justify-center relative z-10 text-center">
-          <div className="w-24 h-24 rounded-full border-2 border-accent-gold bg-charcoal mb-4 glow-border-gold flex items-center justify-center font-display text-4xl text-accent-gold">
+          <div className="w-24 h-24 rounded-full border-2 border-theme-highlight bg-theme-surface mb-4 glow-border-gold flex items-center justify-center font-display text-4xl text-theme-highlight">
             {initials}
           </div>
-          <h3 className="font-display text-2xl font-bold text-accent-gold" data-testid="text-card-title">{title}</h3>
-          <p className="text-accent-teal">{subtitle}</p>
-          {meta && <p className="text-text-secondary mt-4 text-sm max-w-xs mx-auto">"{meta}"</p>}
+          <h3 className="font-display text-2xl font-bold text-theme-highlight" data-testid="text-card-title">{title}</h3>
+          <p className="text-theme-accent">{subtitle}</p>
+          {meta && <p className="text-theme-text-muted mt-4 text-sm max-w-xs mx-auto">"{meta}"</p>}
         </div>
       ) : (
         <div className="relative z-10 flex-grow">
           <div className="flex justify-between items-start gap-2">
-            <h3 className="font-display text-2xl font-bold text-accent-gold" data-testid="text-card-title">{title}</h3>
-            <div className="w-16 h-16 border border-accent-teal/50 flex items-center justify-center flex-shrink-0">
-              <Clock className="w-8 h-8 text-accent-teal" />
+            <h3 className="font-display text-2xl font-bold text-theme-highlight" data-testid="text-card-title">{title}</h3>
+            <div className="w-16 h-16 border border-theme-accent/50 flex items-center justify-center flex-shrink-0">
+              <Clock className="w-8 h-8 text-theme-accent" />
             </div>
           </div>
-          <div className="mt-2 text-text-secondary">
+          <div className="mt-2 text-theme-text-muted">
             <p>{subtitle}</p>
-            {meta && <p className="text-accent-teal font-medium">{meta}</p>}
+            {meta && <p className="text-theme-accent font-medium">{meta}</p>}
           </div>
         </div>
       )}
@@ -144,7 +144,7 @@ export default function SwipeCard({
           <Badge 
             key={tag} 
             variant="outline" 
-            className="bg-accent-teal/10 text-accent-teal border-accent-teal/30 text-xs font-bold"
+            className="bg-theme-accent/10 text-theme-accent border-theme-accent/30 text-xs font-bold"
           >
             {tag}
           </Badge>
@@ -153,13 +153,13 @@ export default function SwipeCard({
 
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-between w-full px-4 pointer-events-none">
         <div 
-          className="border-2 border-accent-teal text-accent-teal font-bold text-2xl px-6 py-2 rounded-lg -rotate-12 transition-opacity"
+          className="border-2 border-theme-accent text-theme-accent font-bold text-2xl px-6 py-2 rounded-lg -rotate-12 transition-opacity"
           style={{ opacity: swipeOpacity.left }}
         >
           SKIP
         </div>
         <div 
-          className="border-2 border-muted-gold text-muted-gold font-bold text-2xl px-6 py-2 rounded-lg rotate-12 transition-opacity"
+          className="border-2 border-theme-highlight text-theme-highlight font-bold text-2xl px-6 py-2 rounded-lg rotate-12 transition-opacity"
           style={{ opacity: swipeOpacity.right }}
         >
           {type === 'attendee' ? 'CONNECT' : 'INTERESTED'}

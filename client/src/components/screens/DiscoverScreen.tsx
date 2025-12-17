@@ -14,7 +14,7 @@ export default function DiscoverScreen({ events, onSwipe }: DiscoverScreenProps)
         <Button 
           variant="outline" 
           size="sm"
-          className="border-accent-teal text-accent-teal glow-text-teal font-display font-bold"
+          className="border-theme-accent text-theme-accent glow-text-teal font-display font-bold"
           data-testid="button-filter-category"
         >
           Category
@@ -22,7 +22,7 @@ export default function DiscoverScreen({ events, onSwipe }: DiscoverScreenProps)
         <Button 
           variant="outline" 
           size="sm"
-          className="border-accent-teal text-accent-teal glow-text-teal font-display font-bold"
+          className="border-theme-accent text-theme-accent glow-text-teal font-display font-bold"
           data-testid="button-filter-time"
         >
           Time
@@ -30,7 +30,7 @@ export default function DiscoverScreen({ events, onSwipe }: DiscoverScreenProps)
         <Button 
           variant="outline" 
           size="sm"
-          className="border-accent-teal text-accent-teal glow-text-teal font-display font-bold"
+          className="border-theme-accent text-theme-accent glow-text-teal font-display font-bold"
           data-testid="button-filter-type"
         >
           Type

@@ -8,8 +8,9 @@ import { ProfileMode } from "@/App";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Calendar, MapPin, Tag } from "lucide-react";
+import { Plus, Calendar, MapPin, Tag, Palette, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useTheme, Theme } from "@/contexts/ThemeContext";
 
 interface ProfileScreenProps {
   user: User;
@@ -20,8 +21,15 @@ interface ProfileScreenProps {
   events: Event[];
 }
 
+const themeColors: Record<Theme, { primary: string; secondary: string; bg: string }> = {
+  'sci-fi': { primary: 'bg-[hsl(166,100%,70%)]', secondary: 'bg-[hsl(51,100%,50%)]', bg: 'bg-[hsl(210,45%,6%)]' },
+  'basic-white': { primary: 'bg-[hsl(220,90%,45%)]', secondary: 'bg-[hsl(220,90%,50%)]', bg: 'bg-[hsl(0,0%,98%)]' },
+  'wild-flowers': { primary: 'bg-[hsl(340,65%,55%)]', secondary: 'bg-[hsl(35,85%,55%)]', bg: 'bg-[hsl(45,40%,96%)]' },
+};
+
 export default function ProfileScreen({ user, pois, mode, onModeChange, onCreateEvent, events }: ProfileScreenProps) {
   const { toast } = useToast();
+  const { theme, setTheme, themes } = useTheme();
   const initials = user.name.split(' ').map(n => n[0]).join('');
   const [preferences, setPreferences] = useState({
     keynotes: 80,
@@ -80,14 +88,14 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
   return (
     <div className="p-4 h-full flex flex-col animate-fadeIn overflow-y-auto" data-testid="screen-profile">
       <div className="text-center mb-4">
-        <div className="w-20 h-20 rounded-full border-2 border-accent-gold bg-charcoal mx-auto mb-3 glow-border-gold flex items-center justify-center font-display text-3xl text-accent-gold">
+        <div className="w-20 h-20 rounded-full border-2 border-theme-highlight bg-theme-surface mx-auto mb-3 glow-border-gold flex items-center justify-center font-display text-3xl text-theme-highlight">
           {initials}
         </div>
-        <h2 className="font-display text-2xl font-bold text-accent-gold" data-testid="text-profile-name">
+        <h2 className="font-display text-2xl font-bold text-theme-highlight" data-testid="text-profile-name">
           {user.name}
         </h2>
-        <p className="text-sm text-accent-teal mt-1" data-testid="text-profile-role">{user.role}</p>
-        <p className="text-xs text-text-secondary mt-2 max-w-xs mx-auto" data-testid="text-profile-tagline">
+        <p className="text-sm text-theme-accent mt-1" data-testid="text-profile-role">{user.role}</p>
+        <p className="text-xs text-theme-text-muted mt-2 max-w-xs mx-auto" data-testid="text-profile-tagline">
           "{user.tagline}"
         </p>
       </div>
@@ -96,7 +104,7 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
         <Button
           variant={mode === 'attendee' ? 'default' : 'outline'}
           onClick={() => onModeChange('attendee')}
-          className={`font-display ${mode === 'attendee' ? 'bg-accent-teal text-charcoal border-accent-teal glow-border-teal' : 'border-accent-teal/50 text-accent-teal'}`}
+          className={`font-display ${mode === 'attendee' ? 'bg-theme-accent text-theme-surface border-theme-accent glow-border-teal' : 'border-theme-accent/50 text-theme-accent'}`}
           data-testid="button-mode-attendee"
         >
           Attendee
@@ -104,7 +112,7 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
         <Button
           variant={mode === 'organizer' ? 'default' : 'outline'}
           onClick={() => onModeChange('organizer')}
-          className={`font-display ${mode === 'organizer' ? 'bg-accent-gold text-charcoal border-accent-gold glow-border-gold' : 'border-accent-gold/50 text-accent-gold'}`}
+          className={`font-display ${mode === 'organizer' ? 'bg-theme-highlight text-theme-surface border-theme-highlight glow-border-gold' : 'border-theme-highlight/50 text-theme-highlight'}`}
           data-testid="button-mode-organizer"
         >
           Organizer
@@ -113,8 +121,8 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
 
       {mode === 'attendee' ? (
         <>
-          <div className="bg-deep-teal/50 rounded-lg border border-accent-teal/20 p-4 mb-4">
-            <h3 className="font-display text-lg text-accent-gold mb-4">Event Preferences</h3>
+          <div className="bg-theme-card/50 rounded-lg border border-theme-accent/20 p-4 mb-4">
+            <h3 className="font-display text-lg text-theme-highlight mb-4">Event Preferences</h3>
             <div className="space-y-4">
               <PreferenceSlider 
                 label="Keynotes" 
@@ -144,52 +152,91 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
             </div>
             <Button 
               onClick={handleSave}
-              className="w-full mt-4 bg-accent-gold text-charcoal border-accent-gold font-display font-bold glow-border-gold"
+              className="w-full mt-4 bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold"
               data-testid="button-save-preferences"
             >
               Save Preferences
             </Button>
           </div>
 
-          <div className="bg-deep-teal/50 rounded-lg border border-accent-teal/20 p-4">
-            <h3 className="font-display text-lg text-accent-gold mb-3">Points of Interest</h3>
+          <div className="bg-theme-card/50 rounded-lg border border-theme-accent/20 p-4 mb-4">
+            <h3 className="font-display text-lg text-theme-highlight mb-3">Points of Interest</h3>
             <POIList pois={pois} />
+          </div>
+
+          <div className="bg-theme-card/50 rounded-lg border border-theme-accent/20 p-4">
+            <h3 className="font-display text-lg text-theme-highlight mb-3 flex items-center gap-2">
+              <Palette className="w-5 h-5" /> App Theme
+            </h3>
+            <div className="space-y-2">
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTheme(t.id);
+                    toast({
+                      title: "Theme Changed",
+                      description: `Switched to ${t.name} theme.`
+                    });
+                  }}
+                  className={`w-full p-3 rounded-lg border transition-all flex items-center gap-3 hover-elevate ${
+                    theme === t.id 
+                      ? 'border-theme-highlight bg-theme-highlight/10' 
+                      : 'border-theme-accent/20 bg-theme-surface/30'
+                  }`}
+                  data-testid={`button-theme-${t.id}`}
+                >
+                  <div className="flex gap-1">
+                    <div className={`w-4 h-4 rounded-full ${themeColors[t.id].bg} border border-foreground/20`} />
+                    <div className={`w-4 h-4 rounded-full ${themeColors[t.id].primary}`} />
+                    <div className={`w-4 h-4 rounded-full ${themeColors[t.id].secondary}`} />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-display text-sm text-theme-text">{t.name}</p>
+                    <p className="text-xs text-theme-text-muted">{t.description}</p>
+                  </div>
+                  {theme === t.id && (
+                    <Check className="w-5 h-5 text-theme-highlight" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </>
       ) : (
         <>
-          <div className="bg-deep-teal/50 rounded-lg border border-accent-gold/30 p-4 mb-4">
+          <div className="bg-theme-card/50 rounded-lg border border-theme-highlight/30 p-4 mb-4">
             <div className="flex items-center justify-between gap-2 mb-4">
-              <h3 className="font-display text-lg text-accent-gold">My Events</h3>
+              <h3 className="font-display text-lg text-theme-highlight">My Events</h3>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button 
                     size="sm"
-                    className="bg-accent-gold text-charcoal border-accent-gold font-display glow-border-gold"
+                    className="bg-theme-highlight text-theme-surface border-theme-highlight font-display glow-border-gold"
                     data-testid="button-create-event"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Create Event
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-charcoal border-accent-teal/30 max-w-[380px]">
+                <DialogContent className="bg-theme-surface border-theme-accent/30 max-w-[380px]">
                   <DialogHeader>
-                    <DialogTitle className="font-display text-xl text-accent-gold">Create New Event</DialogTitle>
+                    <DialogTitle className="font-display text-xl text-theme-highlight">Create New Event</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="event-name" className="text-accent-teal font-display">Event Name</Label>
+                      <Label htmlFor="event-name" className="text-theme-accent font-display">Event Name</Label>
                       <Input
                         id="event-name"
                         value={newEvent.name}
                         onChange={(e) => setNewEvent(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="Quantum Computing Workshop"
-                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
                         data-testid="input-event-name"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="event-location" className="text-accent-teal font-display flex items-center gap-1">
+                      <Label htmlFor="event-location" className="text-theme-accent font-display flex items-center gap-1">
                         <MapPin className="w-3 h-3" /> Location
                       </Label>
                       <Input
@@ -197,12 +244,12 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
                         value={newEvent.location}
                         onChange={(e) => setNewEvent(prev => ({ ...prev, location: e.target.value }))}
                         placeholder="Innovation Lab, L3"
-                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
                         data-testid="input-event-location"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="event-time" className="text-accent-teal font-display flex items-center gap-1">
+                      <Label htmlFor="event-time" className="text-theme-accent font-display flex items-center gap-1">
                         <Calendar className="w-3 h-3" /> Date & Time
                       </Label>
                       <Input
@@ -210,12 +257,12 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
                         value={newEvent.time}
                         onChange={(e) => setNewEvent(prev => ({ ...prev, time: e.target.value }))}
                         placeholder="Dec 16, 14:00"
-                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
                         data-testid="input-event-time"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="event-date" className="text-accent-teal font-display">Date (day number)</Label>
+                      <Label htmlFor="event-date" className="text-theme-accent font-display">Date (day number)</Label>
                       <Input
                         id="event-date"
                         type="number"
@@ -224,12 +271,12 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
                         placeholder="16"
                         min={15}
                         max={31}
-                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
                         data-testid="input-event-date"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="event-tags" className="text-accent-teal font-display flex items-center gap-1">
+                      <Label htmlFor="event-tags" className="text-theme-accent font-display flex items-center gap-1">
                         <Tag className="w-3 h-3" /> Tags (comma separated)
                       </Label>
                       <Input
@@ -237,13 +284,13 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
                         value={newEvent.tags}
                         onChange={(e) => setNewEvent(prev => ({ ...prev, tags: e.target.value }))}
                         placeholder="Workshop, Quantum, Tech"
-                        className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                        className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
                         data-testid="input-event-tags"
                       />
                     </div>
                     <Button
                       onClick={handleCreateEvent}
-                      className="w-full bg-accent-gold text-charcoal border-accent-gold font-display font-bold glow-border-gold"
+                      className="w-full bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold"
                       data-testid="button-submit-event"
                     >
                       Create Event
@@ -254,7 +301,7 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
             </div>
 
             {myEvents.length === 0 ? (
-              <p className="text-text-secondary text-sm text-center py-6">
+              <p className="text-theme-text-muted text-sm text-center py-6">
                 You haven't created any events yet. Click "Create Event" to get started.
               </p>
             ) : (
@@ -262,19 +309,19 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
                 {myEvents.map(event => (
                   <div 
                     key={event.id} 
-                    className="bg-charcoal/50 rounded-lg p-3 border border-accent-teal/20"
+                    className="bg-theme-surface/50 rounded-lg p-3 border border-theme-accent/20"
                     data-testid={`card-my-event-${event.id}`}
                   >
-                    <h4 className="font-display text-accent-gold font-semibold">{event.name}</h4>
-                    <p className="text-xs text-text-secondary mt-1 flex items-center gap-1">
+                    <h4 className="font-display text-theme-highlight font-semibold">{event.name}</h4>
+                    <p className="text-xs text-theme-text-muted mt-1 flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {event.location}
                     </p>
-                    <p className="text-xs text-accent-teal mt-1 flex items-center gap-1">
+                    <p className="text-xs text-theme-accent mt-1 flex items-center gap-1">
                       <Calendar className="w-3 h-3" /> {event.time}
                     </p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {event.tags.map(tag => (
-                        <Badge key={tag} variant="outline" className="text-xs border-accent-teal/50 text-accent-teal">
+                        <Badge key={tag} variant="outline" className="text-xs border-theme-accent/50 text-theme-accent">
                           {tag}
                         </Badge>
                       ))}
@@ -285,19 +332,19 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
             )}
           </div>
 
-          <div className="bg-deep-teal/50 rounded-lg border border-accent-teal/20 p-4">
-            <h3 className="font-display text-lg text-accent-gold mb-3">Organizer Tips</h3>
-            <ul className="text-sm text-text-secondary space-y-2">
+          <div className="bg-theme-card/50 rounded-lg border border-theme-accent/20 p-4">
+            <h3 className="font-display text-lg text-theme-highlight mb-3">Organizer Tips</h3>
+            <ul className="text-sm text-theme-text-muted space-y-2">
               <li className="flex items-start gap-2">
-                <span className="text-accent-teal">1.</span>
+                <span className="text-theme-accent">1.</span>
                 Create events with clear titles and detailed locations.
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-accent-teal">2.</span>
+                <span className="text-theme-accent">2.</span>
                 Add relevant tags to help attendees discover your events.
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-accent-teal">3.</span>
+                <span className="text-theme-accent">3.</span>
                 Your events will appear in the discovery flow for all attendees.
               </li>
             </ul>

@@ -18,8 +18,8 @@ export default function PreferenceSlider({ label, defaultValue = 50, onChange }:
   return (
     <div className="space-y-2" data-testid={`container-slider-${label.toLowerCase().replace(/\s+/g, '-')}`}>
       <div className="flex justify-between items-center">
-        <label className="text-sm text-text-secondary">{label}</label>
-        <span className="text-accent-gold font-bold text-sm">{value}%</span>
+        <label className="text-sm text-theme-text-muted">{label}</label>
+        <span className="text-theme-highlight font-bold text-sm">{value}%</span>
       </div>
       <input
         type="range"

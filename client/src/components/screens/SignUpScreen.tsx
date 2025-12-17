@@ -103,15 +103,15 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
     <div 
       className="h-screen w-full flex flex-col p-6"
       style={{
-        background: 'radial-gradient(circle at 50% 100%, hsla(195, 60%, 10%, 0.5), transparent 70%), hsl(210, 45%, 6%)'
+        background: 'var(--app-gradient)'
       }}
       data-testid="screen-signup"
     >
       <div className="text-center mb-8 pt-8">
-        <h1 className="font-display text-3xl font-bold text-accent-gold glow-text-gold">
+        <h1 className="font-display text-3xl font-bold text-theme-highlight glow-text-gold">
           AURA
         </h1>
-        <p className="text-text-secondary mt-2 text-sm">
+        <p className="text-theme-text-muted mt-2 text-sm">
           {step === 'auth' && 'Join the experience'}
           {step === 'profile' && 'Create your profile'}
           {step === 'location' && 'Find events nearby'}
@@ -123,8 +123,8 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
           <div
             key={s}
             className={`h-1 w-16 rounded-full transition-all ${
-              s === step ? 'bg-accent-gold glow-border-gold' : 
-              ['auth', 'profile', 'location'].indexOf(step) > i ? 'bg-accent-teal' : 'bg-deep-teal'
+              s === step ? 'bg-theme-highlight glow-border-gold' : 
+              ['auth', 'profile', 'location'].indexOf(step) > i ? 'bg-theme-accent' : 'bg-theme-card'
             }`}
           />
         ))}
@@ -137,7 +137,7 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
               <>
                 <Button
                   variant="outline"
-                  className="w-full border-accent-teal/50 text-text-primary font-display gap-2"
+                  className="w-full border-theme-accent/50 text-theme-text font-display gap-2"
                   onClick={() => handleSocialLogin('Google')}
                   data-testid="button-google-login"
                 >
@@ -147,7 +147,7 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
                 
                 <Button
                   variant="outline"
-                  className="w-full border-accent-teal/50 text-text-primary font-display gap-2"
+                  className="w-full border-theme-accent/50 text-theme-text font-display gap-2"
                   onClick={() => handleSocialLogin('Apple')}
                   data-testid="button-apple-login"
                 >
@@ -157,16 +157,16 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
 
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-accent-teal/20" />
+                    <div className="w-full border-t border-theme-accent/20" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-charcoal px-2 text-text-secondary">or</span>
+                    <span className="bg-theme-surface px-2 text-theme-text-muted">or</span>
                   </div>
                 </div>
 
                 <Button
                   variant="outline"
-                  className="w-full border-accent-teal/50 text-accent-teal font-display gap-2"
+                  className="w-full border-theme-accent/50 text-theme-accent font-display gap-2"
                   onClick={() => setAuthMethod('email')}
                   data-testid="button-email-option"
                 >
@@ -176,7 +176,7 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
 
                 <Button
                   variant="outline"
-                  className="w-full border-accent-teal/50 text-accent-teal font-display gap-2"
+                  className="w-full border-theme-accent/50 text-theme-accent font-display gap-2"
                   onClick={() => setAuthMethod('phone')}
                   data-testid="button-phone-option"
                 >
@@ -192,40 +192,40 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setAuthMethod(null)}
-                  className="text-accent-teal mb-2"
+                  className="text-theme-accent mb-2"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" /> Back
                 </Button>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-accent-teal font-display">Email Address</Label>
+                  <Label htmlFor="email" className="text-theme-accent font-display">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="you@example.com"
-                    className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                    className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
                     data-testid="input-email"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-accent-teal font-display">Password</Label>
+                  <Label htmlFor="password" className="text-theme-accent font-display">Password</Label>
                   <Input
                     id="password"
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="Create a password"
-                    className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                    className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
                     data-testid="input-password"
                   />
                 </div>
 
                 <Button
                   onClick={handleEmailSubmit}
-                  className="w-full bg-accent-gold text-charcoal border-accent-gold font-display font-bold glow-border-gold mt-4"
+                  className="w-full bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold mt-4"
                   data-testid="button-email-submit"
                 >
                   Continue <ChevronRight className="w-4 h-4 ml-1" />
@@ -239,27 +239,27 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setAuthMethod(null)}
-                  className="text-accent-teal mb-2"
+                  className="text-theme-accent mb-2"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" /> Back
                 </Button>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-accent-teal font-display">Mobile Number</Label>
+                  <Label htmlFor="phone" className="text-theme-accent font-display">Mobile Number</Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="+1 (555) 123-4567"
-                    className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                    className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
                     data-testid="input-phone"
                   />
                 </div>
 
                 <Button
                   onClick={handlePhoneSubmit}
-                  className="w-full bg-accent-gold text-charcoal border-accent-gold font-display font-bold glow-border-gold mt-4"
+                  className="w-full bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold mt-4"
                   data-testid="button-phone-submit"
                 >
                   Continue <ChevronRight className="w-4 h-4 ml-1" />
@@ -273,7 +273,7 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
           <div className="space-y-6 animate-fadeIn">
             <div className="flex flex-col items-center">
               <div 
-                className="w-24 h-24 rounded-full border-2 border-accent-gold bg-deep-teal flex items-center justify-center cursor-pointer hover-elevate glow-border-gold"
+                className="w-24 h-24 rounded-full border-2 border-theme-highlight bg-theme-card flex items-center justify-center cursor-pointer hover-elevate glow-border-gold"
                 onClick={() => {
                   toast({
                     title: "Photo Upload",
@@ -285,14 +285,14 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
                 {formData.avatar ? (
                   <img src={formData.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  <Camera className="w-8 h-8 text-accent-gold" />
+                  <Camera className="w-8 h-8 text-theme-highlight" />
                 )}
               </div>
-              <p className="text-xs text-text-secondary mt-2">Tap to add photo</p>
+              <p className="text-xs text-theme-text-muted mt-2">Tap to add photo</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-accent-teal font-display flex items-center gap-1">
+              <Label htmlFor="name" className="text-theme-accent font-display flex items-center gap-1">
                 <User className="w-4 h-4" /> Your Name
               </Label>
               <Input
@@ -300,14 +300,14 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Enter your name"
-                className="bg-deep-teal/50 border-accent-teal/30 text-text-primary"
+                className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
                 data-testid="input-name"
               />
             </div>
 
             <Button
               onClick={handleProfileSubmit}
-              className="w-full bg-accent-gold text-charcoal border-accent-gold font-display font-bold glow-border-gold"
+              className="w-full bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold"
               data-testid="button-profile-submit"
             >
               Continue <ChevronRight className="w-4 h-4 ml-1" />
@@ -317,13 +317,13 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
 
         {step === 'location' && (
           <div className="space-y-6 animate-fadeIn text-center">
-            <div className="w-20 h-20 rounded-full border-2 border-accent-teal bg-deep-teal mx-auto flex items-center justify-center glow-border-teal">
-              <MapPin className="w-10 h-10 text-accent-teal" />
+            <div className="w-20 h-20 rounded-full border-2 border-theme-accent bg-theme-card mx-auto flex items-center justify-center glow-border-teal">
+              <MapPin className="w-10 h-10 text-theme-accent" />
             </div>
 
             <div>
-              <h3 className="font-display text-xl text-accent-gold mb-2">Enable Location</h3>
-              <p className="text-text-secondary text-sm">
+              <h3 className="font-display text-xl text-theme-highlight mb-2">Enable Location</h3>
+              <p className="text-theme-text-muted text-sm">
                 Allow AURA to access your location to discover events happening near you.
               </p>
             </div>
@@ -331,7 +331,7 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
             <div className="space-y-3 pt-4">
               <Button
                 onClick={() => handleLocationPermission(true)}
-                className="w-full bg-accent-gold text-charcoal border-accent-gold font-display font-bold glow-border-gold"
+                className="w-full bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold"
                 data-testid="button-location-allow"
               >
                 Allow Location Access
@@ -340,7 +340,7 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
               <Button
                 variant="ghost"
                 onClick={() => handleLocationPermission(false)}
-                className="w-full text-text-secondary font-display"
+                className="w-full text-theme-text-muted font-display"
                 data-testid="button-location-skip"
               >
                 Maybe Later
@@ -350,7 +350,7 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
         )}
       </div>
 
-      <p className="text-center text-xs text-text-secondary mt-auto pt-4">
+      <p className="text-center text-xs text-theme-text-muted mt-auto pt-4">
         By continuing, you agree to our Terms of Service and Privacy Policy
       </p>
     </div>

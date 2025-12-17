@@ -18,7 +18,7 @@ const navItems: { id: Screen; label: string; icon: typeof Home }[] = [
 export default function BottomNav({ activeScreen, onNavigate }: BottomNavProps) {
   return (
     <nav 
-      className="flex-shrink-0 bg-charcoal/80 backdrop-blur-sm border-t border-accent-teal/20 grid grid-cols-5 gap-2 p-2 z-20"
+      className="flex-shrink-0 bg-theme-surface/80 backdrop-blur-sm border-t border-theme-accent/20 grid grid-cols-5 gap-2 p-2 z-20"
       data-testid="nav-bottom"
     >
       {navItems.map(({ id, label, icon: Icon }) => {
@@ -29,8 +29,8 @@ export default function BottomNav({ activeScreen, onNavigate }: BottomNavProps) 
             onClick={() => onNavigate(id)}
             className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-300 ${
               isActive 
-                ? 'text-accent-gold glow-text-gold' 
-                : 'text-text-secondary hover:text-accent-teal'
+                ? 'text-theme-highlight glow-text-gold' 
+                : 'text-theme-text-muted hover:text-theme-accent'
             }`}
             data-testid={`button-nav-${id}`}
           >
