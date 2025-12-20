@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type InsertReport, type UserReport, type InsertBlock, type UserBlock } from "@shared/schema";
+import { type User, type InsertUser, type InsertReport, type UserReport, type InsertBlock, type UserBlock, type VerificationCode, type InsertVerificationCode } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { Resend } from "resend";
 
@@ -6,8 +6,14 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByPhone(phone: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
+  createVerificationCode(data: InsertVerificationCode): Promise<VerificationCode>;
+  getVerificationCode(identifier: string, code: string, type: string): Promise<VerificationCode | undefined>;
+  deleteVerificationCodes(identifier: string): Promise<void>;
+  sendVerificationEmail(email: string, code: string): Promise<boolean>;
   createReport(report: InsertReport): Promise<UserReport>;
   getReportsByReporter(reporterId: string): Promise<UserReport[]>;
   createBlock(block: InsertBlock): Promise<UserBlock>;
@@ -20,28 +26,90 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private reports: Map<string, UserReport>;
   private blocks: Map<string, UserBlock>;
+  private verificationCodes: Map<string, VerificationCode>;
 
   constructor() {
     this.users = new Map();
     this.reports = new Map();
     this.blocks = new Map();
+    this.verificationCodes = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.email === email,
+    );
+  }
+
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.phone === phone,
     );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { ...insertUser, id, createdAt: new Date() };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, ...updates };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async createVerificationCode(data: InsertVerificationCode): Promise<VerificationCode> {
+    const id = randomUUID();
+    const code: VerificationCode = { ...data, id, createdAt: new Date() };
+    this.verificationCodes.set(id, code);
+    return code;
+  }
+
+  async getVerificationCode(identifier: string, code: string, type: string): Promise<VerificationCode | undefined> {
+    return Array.from(this.verificationCodes.values()).find(
+      (vc) => vc.identifier === identifier && vc.code === code && vc.type === type && vc.expiresAt > new Date()
+    );
+  }
+
+  async deleteVerificationCodes(identifier: string): Promise<void> {
+    for (const [id, vc] of this.verificationCodes.entries()) {
+      if (vc.identifier === identifier) {
+        this.verificationCodes.delete(id);
+      }
+    }
+  }
+
+  async sendVerificationEmail(email: string, code: string): Promise<boolean> {
+    try {
+      await resend.emails.send({
+        from: "AURA <onboarding@resend.dev>",
+        to: email,
+        subject: `Your AURA verification code: ${code}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #1a1a2e; text-align: center;">AURA</h1>
+            <p style="color: #666; text-align: center;">Your verification code is:</p>
+            <div style="background: #f0f0f0; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1a1a2e;">${code}</span>
+            </div>
+            <p style="color: #999; font-size: 12px; text-align: center;">This code expires in 10 minutes.</p>
+          </div>
+        `,
+      });
+      console.log(`[AUTH] Verification email sent to ${email}`);
+      return true;
+    } catch (error) {
+      console.error(`[AUTH] Failed to send verification email to ${email}:`, error);
+      return false;
+    }
   }
 
   async createReport(insertReport: InsertReport): Promise<UserReport> {

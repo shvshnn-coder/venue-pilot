@@ -1,12 +1,95 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertReportSchema, insertBlockSchema } from "@shared/schema";
+import { insertReportSchema, insertBlockSchema, sendCodeSchema, verifyCodeSchema } from "@shared/schema";
+
+function generateCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  app.post("/api/auth/send-code", async (req, res) => {
+    try {
+      const parsed = sendCodeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+
+      const { identifier, type } = parsed.data;
+      const code = generateCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      await storage.deleteVerificationCodes(identifier);
+      await storage.createVerificationCode({ identifier, code, type, expiresAt });
+
+      if (type === 'email') {
+        const sent = await storage.sendVerificationEmail(identifier, code);
+        if (!sent) {
+          return res.status(500).json({ error: "Failed to send verification email" });
+        }
+      } else {
+        console.log(`[AUTH] SMS verification code for ${identifier}: ${code}`);
+      }
+
+      res.json({ success: true, message: `Verification code sent to ${type}` });
+    } catch (error) {
+      console.error("Error sending verification code:", error);
+      res.status(500).json({ error: "Failed to send verification code" });
+    }
+  });
+
+  app.post("/api/auth/verify-code", async (req, res) => {
+    try {
+      const parsed = verifyCodeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+
+      const { identifier, code, type } = parsed.data;
+      const verificationCode = await storage.getVerificationCode(identifier, code, type);
+
+      if (!verificationCode) {
+        return res.status(400).json({ error: "Invalid or expired verification code" });
+      }
+
+      await storage.deleteVerificationCodes(identifier);
+
+      let user = type === 'email' 
+        ? await storage.getUserByEmail(identifier)
+        : await storage.getUserByPhone(identifier);
+
+      if (!user) {
+        const userData = type === 'email' 
+          ? { email: identifier, phone: null, name: null, avatar: null }
+          : { email: null, phone: identifier, name: null, avatar: null };
+        user = await storage.createUser(userData);
+      }
+
+      res.json({ success: true, user });
+    } catch (error) {
+      console.error("Error verifying code:", error);
+      res.status(500).json({ error: "Failed to verify code" });
+    }
+  });
+
+  app.patch("/api/auth/user/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, avatar } = req.body;
+      const user = await storage.updateUser(id, { name, avatar });
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
   app.post("/api/reports", async (req, res) => {
     try {
       const parsed = insertReportSchema.safeParse(req.body);
