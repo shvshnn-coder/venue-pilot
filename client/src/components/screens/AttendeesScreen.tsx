@@ -3,7 +3,14 @@ import CardStack from "../CardStack";
 import { Attendee } from "@/lib/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { Check, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ReportBlockModal from "../ReportBlockModal";
 
 interface AttendeesScreenProps {
   attendees: Attendee[];
@@ -13,6 +20,9 @@ interface AttendeesScreenProps {
 export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenProps) {
   const [viewMode, setViewMode] = useState<'discover' | 'connections'>('discover');
   const [localAttendees, setLocalAttendees] = useState(attendees);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedAttendee, setSelectedAttendee] = useState<Attendee | null>(null);
+  const currentUserId = "current-user";
 
   const connections = useMemo(() => 
     localAttendees.filter(a => a.swiped === 'right'), 
@@ -98,12 +108,45 @@ export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenP
                     <Button size="icon" variant="outline" className="border-theme-accent text-theme-accent" data-testid={`button-message-${attendee.id}`}>
                       <Check className="w-4 h-4" />
                     </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="icon" variant="ghost" className="text-theme-text-muted" data-testid={`button-menu-connection-${attendee.id}`}>
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="theme-card border-theme-accent/30">
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            setSelectedAttendee(attendee);
+                            setReportModalOpen(true);
+                          }}
+                          className="text-orange-500 cursor-pointer"
+                          data-testid={`button-report-connection-${attendee.id}`}
+                        >
+                          Report or Block
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               );
             })
           )}
         </div>
+      )}
+
+      {selectedAttendee && (
+        <ReportBlockModal
+          isOpen={reportModalOpen}
+          onClose={() => {
+            setReportModalOpen(false);
+            setSelectedAttendee(null);
+          }}
+          targetUserId={selectedAttendee.id}
+          targetUserName={selectedAttendee.name}
+          currentUserId={currentUserId}
+          mode="both"
+        />
       )}
     </div>
   );

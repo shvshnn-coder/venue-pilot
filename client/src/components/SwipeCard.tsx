@@ -1,6 +1,14 @@
 import { useState, useRef, useCallback } from "react";
-import { Clock } from "lucide-react";
+import { Clock, MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ReportBlockModal from "./ReportBlockModal";
 
 interface SwipeCardProps {
   id: string;
@@ -14,6 +22,7 @@ interface SwipeCardProps {
   onSwipe: (id: string, direction: 'left' | 'right') => void;
   initials?: string;
   topCardDragging?: boolean;
+  currentUserId?: string;
 }
 
 export default function SwipeCard({
@@ -27,10 +36,12 @@ export default function SwipeCard({
   stackIndex,
   onSwipe,
   initials,
-  topCardDragging = false
+  topCardDragging = false,
+  currentUserId = "current-user"
 }: SwipeCardProps) {
   const [dragState, setDragState] = useState({ x: 0, y: 0, isDragging: false });
   const [swipeOpacity, setSwipeOpacity] = useState({ left: 0, right: 0 });
+  const [showReportModal, setShowReportModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const startPos = useRef({ x: 0, y: 0 });
 
@@ -115,6 +126,36 @@ export default function SwipeCard({
         <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-theme-accent/5 rounded-bl-full blur-3xl"></div>
       </div>
 
+      {type === 'attendee' && (
+        <div className="absolute top-3 right-3 z-20">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="text-theme-text-muted"
+                onClick={(e) => e.stopPropagation()}
+                data-testid={`button-menu-${id}`}
+              >
+                <MoreVertical className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="theme-card border-theme-accent/30">
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowReportModal(true);
+                }}
+                className="text-orange-500 cursor-pointer"
+                data-testid={`button-report-${id}`}
+              >
+                Report or Block
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
       {type === 'attendee' && initials ? (
         <div className="flex-grow flex flex-col items-center justify-center relative z-10 text-center">
           <div className="w-24 h-24 rounded-full border-2 border-theme-highlight bg-theme-surface mb-4 glow-border-gold flex items-center justify-center font-display text-4xl text-theme-highlight">
@@ -165,6 +206,17 @@ export default function SwipeCard({
           {type === 'attendee' ? 'CONNECT' : 'INTERESTED'}
         </div>
       </div>
+
+      {type === 'attendee' && (
+        <ReportBlockModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          targetUserId={id}
+          targetUserName={title}
+          currentUserId={currentUserId}
+          mode="both"
+        />
+      )}
     </div>
   );
 }
