@@ -7,6 +7,34 @@ function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 3;
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(identifier);
+  
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+  
+  entry.count++;
+  return true;
+}
+
+function normalizeIdentifier(identifier: string, type: 'email' | 'phone'): string {
+  if (type === 'email') {
+    return identifier.trim().toLowerCase();
+  }
+  return identifier.replace(/[\s\-\(\)]/g, '').trim();
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -18,7 +46,14 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
       }
 
-      const { identifier, type } = parsed.data;
+      const type = parsed.data.type;
+      const identifier = normalizeIdentifier(parsed.data.identifier, type);
+      
+      if (!checkRateLimit(identifier)) {
+        console.log(`[AUTH] Rate limit exceeded for ${identifier}`);
+        return res.status(429).json({ error: "Too many requests. Please wait a minute before trying again." });
+      }
+
       const code = generateCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -31,7 +66,7 @@ export async function registerRoutes(
           return res.status(500).json({ error: "Failed to send verification email" });
         }
       } else {
-        console.log(`[AUTH] SMS verification code for ${identifier}: ${code}`);
+        console.log(`[AUTH] SMS verification code for ${identifier}: ${code} (SMS delivery not configured - set up Twilio integration)`);
       }
 
       res.json({ success: true, message: `Verification code sent to ${type}` });
@@ -48,7 +83,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
       }
 
-      const { identifier, code, type } = parsed.data;
+      const type = parsed.data.type;
+      const identifier = normalizeIdentifier(parsed.data.identifier, type);
+      const code = parsed.data.code;
       const verificationCode = await storage.getVerificationCode(identifier, code, type);
 
       if (!verificationCode) {

@@ -63,6 +63,30 @@ Preferred communication style: Simple, everyday language.
 ### Fonts
 - **Google Fonts**: Outfit (300, 400, 500, 700) and Rajdhani (500, 700) loaded via CDN
 
+## Authentication System
+
+### Phone/Email Verification Login
+Users can sign up and log in using their phone number or email address. A 6-digit verification code is sent to confirm their identity.
+
+### API Endpoints
+- `POST /api/auth/send-code` - Sends verification code to email or phone
+- `POST /api/auth/verify-code` - Verifies the code and creates/retrieves user
+- `PATCH /api/auth/user/:id` - Updates user profile (name, avatar)
+
+### Email Verification
+Email verification codes are sent via Resend API. The `RESEND_API_KEY` secret is required.
+
+### SMS Verification
+SMS verification requires Twilio integration. Currently, phone verification codes are logged to the server console. To enable SMS delivery:
+1. Set up Twilio integration via Replit's integrations panel
+2. Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER secrets
+
+### Current Implementation
+- Verification codes expire after 10 minutes
+- Users are created on first successful verification
+- Profile data (name, avatar) is collected after verification
+- All user data currently stored in-memory (MemStorage)
+
 ## Report & Block System
 
 ### Email Integration
