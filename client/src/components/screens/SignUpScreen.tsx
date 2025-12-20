@@ -3,25 +3,95 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, User, MapPin, Camera, ChevronRight, ChevronLeft } from "lucide-react";
+import { Mail, Phone, User, MapPin, Camera, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { SiGoogle, SiApple } from "react-icons/si";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-type SignUpStep = 'auth' | 'profile' | 'location';
+type SignUpStep = 'auth' | 'verify' | 'profile' | 'location';
 
 interface SignUpScreenProps {
-  onComplete: (userData: { name: string; avatar?: string }) => void;
+  onComplete: (userData: { name: string; avatar?: string; userId?: string }) => void;
 }
 
 export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
   const { toast } = useToast();
   const [step, setStep] = useState<SignUpStep>('auth');
   const [authMethod, setAuthMethod] = useState<'email' | 'phone' | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
     phone: '',
     name: '',
     avatar: '',
+  });
+
+  const sendCodeMutation = useMutation({
+    mutationFn: async (data: { identifier: string; type: 'email' | 'phone' }) => {
+      const response = await apiRequest('POST', '/api/auth/send-code', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Code Sent",
+        description: `Check your ${authMethod === 'email' ? 'email inbox' : 'phone'} for the verification code.`
+      });
+      setStep('verify');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Send Code",
+        description: error.message || "Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const verifyCodeMutation = useMutation({
+    mutationFn: async (data: { identifier: string; code: string; type: 'email' | 'phone' }) => {
+      const response = await apiRequest('POST', '/api/auth/verify-code', data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.user) {
+        setUserId(data.user.id);
+        if (data.user.name) {
+          setFormData(prev => ({ ...prev, name: data.user.name }));
+        }
+      }
+      toast({
+        title: "Verified",
+        description: "Your account has been verified."
+      });
+      setStep('profile');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Invalid Code",
+        description: error.message || "The code is incorrect or expired.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async (data: { name: string; avatar?: string }) => {
+      if (!userId) throw new Error("User ID not found");
+      const response = await apiRequest('PATCH', `/api/auth/user/${userId}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      setStep('location');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Update Profile",
+        description: error.message || "Please try again.",
+        variant: "destructive"
+      });
+    }
   });
 
   const handleSocialLogin = (provider: string) => {
@@ -32,28 +102,41 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
     setStep('profile');
   };
 
-  const handleEmailSubmit = () => {
-    if (!formData.email || !formData.password) {
+  const handleSendCode = () => {
+    const identifier = authMethod === 'email' ? formData.email : formData.phone;
+    if (!identifier) {
       toast({
-        title: "Missing Fields",
-        description: "Please enter both email and password.",
+        title: "Missing Information",
+        description: `Please enter your ${authMethod === 'email' ? 'email address' : 'phone number'}.`,
         variant: "destructive"
       });
       return;
     }
-    setStep('profile');
+
+    if (authMethod === 'email' && !formData.email.includes('@')) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    sendCodeMutation.mutate({ identifier, type: authMethod! });
   };
 
-  const handlePhoneSubmit = () => {
-    if (!formData.phone) {
+  const handleVerifyCode = () => {
+    if (verificationCode.length !== 6) {
       toast({
-        title: "Missing Phone",
-        description: "Please enter your mobile number.",
+        title: "Invalid Code",
+        description: "Please enter the 6-digit code.",
         variant: "destructive"
       });
       return;
     }
-    setStep('profile');
+
+    const identifier = authMethod === 'email' ? formData.email : formData.phone;
+    verifyCodeMutation.mutate({ identifier, code: verificationCode, type: authMethod! });
   };
 
   const handleProfileSubmit = () => {
@@ -65,7 +148,7 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
       });
       return;
     }
-    setStep('location');
+    updateUserMutation.mutate({ name: formData.name, avatar: formData.avatar || undefined });
   };
 
   const handleLocationPermission = (granted: boolean) => {
@@ -77,14 +160,14 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
               title: "Location Enabled",
               description: "We'll show you events nearby."
             });
-            onComplete({ name: formData.name, avatar: formData.avatar });
+            onComplete({ name: formData.name, avatar: formData.avatar, userId: userId || undefined });
           },
           () => {
             toast({
               title: "Location Denied",
               description: "You can enable this later in settings."
             });
-            onComplete({ name: formData.name, avatar: formData.avatar });
+            onComplete({ name: formData.name, avatar: formData.avatar, userId: userId || undefined });
           }
         );
       } else {
@@ -92,12 +175,20 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
           title: "Location Unavailable",
           description: "Location services are not supported on this device."
         });
-        onComplete({ name: formData.name, avatar: formData.avatar });
+        onComplete({ name: formData.name, avatar: formData.avatar, userId: userId || undefined });
       }
     } else {
-      onComplete({ name: formData.name, avatar: formData.avatar });
+      onComplete({ name: formData.name, avatar: formData.avatar, userId: userId || undefined });
     }
   };
+
+  const handleResendCode = () => {
+    const identifier = authMethod === 'email' ? formData.email : formData.phone;
+    sendCodeMutation.mutate({ identifier, type: authMethod! });
+  };
+
+  const getSteps = () => ['auth', 'verify', 'profile', 'location'];
+  const currentStepIndex = getSteps().indexOf(step);
 
   return (
     <div 
@@ -113,18 +204,19 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
         </h1>
         <p className="text-theme-text-muted mt-2 text-sm">
           {step === 'auth' && 'Join the experience'}
+          {step === 'verify' && 'Enter verification code'}
           {step === 'profile' && 'Create your profile'}
           {step === 'location' && 'Find events nearby'}
         </p>
       </div>
 
       <div className="flex gap-2 justify-center mb-8">
-        {['auth', 'profile', 'location'].map((s, i) => (
+        {getSteps().map((s, i) => (
           <div
             key={s}
-            className={`h-1 w-16 rounded-full transition-all ${
+            className={`h-1 w-12 rounded-full transition-all ${
               s === step ? 'bg-theme-highlight glow-border-gold' : 
-              ['auth', 'profile', 'location'].indexOf(step) > i ? 'bg-theme-accent' : 'bg-theme-card'
+              currentStepIndex > i ? 'bg-theme-accent' : 'bg-theme-card'
             }`}
           />
         ))}
@@ -210,25 +302,20 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-theme-accent font-display">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Create a password"
-                    className="bg-theme-card/50 border-theme-accent/30 text-theme-text"
-                    data-testid="input-password"
-                  />
-                </div>
+                <p className="text-xs text-theme-text-muted">
+                  We'll send a 6-digit verification code to this email.
+                </p>
 
                 <Button
-                  onClick={handleEmailSubmit}
+                  onClick={handleSendCode}
+                  disabled={sendCodeMutation.isPending}
                   className="w-full bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold mt-4"
-                  data-testid="button-email-submit"
+                  data-testid="button-send-code"
                 >
-                  Continue <ChevronRight className="w-4 h-4 ml-1" />
+                  {sendCodeMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : null}
+                  Send Verification Code <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
             )}
@@ -257,15 +344,92 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
                   />
                 </div>
 
+                <p className="text-xs text-theme-text-muted">
+                  We'll send a 6-digit verification code via SMS.
+                </p>
+
                 <Button
-                  onClick={handlePhoneSubmit}
+                  onClick={handleSendCode}
+                  disabled={sendCodeMutation.isPending}
                   className="w-full bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold mt-4"
-                  data-testid="button-phone-submit"
+                  data-testid="button-send-code-phone"
                 >
-                  Continue <ChevronRight className="w-4 h-4 ml-1" />
+                  {sendCodeMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : null}
+                  Send Verification Code <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
             )}
+          </div>
+        )}
+
+        {step === 'verify' && (
+          <div className="space-y-6 animate-fadeIn">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStep('auth');
+                setVerificationCode('');
+              }}
+              className="text-theme-accent mb-2"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" /> Back
+            </Button>
+
+            <div className="text-center">
+              <p className="text-theme-text mb-2">
+                We sent a code to
+              </p>
+              <p className="text-theme-highlight font-medium">
+                {authMethod === 'email' ? formData.email : formData.phone}
+              </p>
+            </div>
+
+            <div className="flex justify-center">
+              <InputOTP
+                maxLength={6}
+                value={verificationCode}
+                onChange={setVerificationCode}
+                data-testid="input-verification-code"
+              >
+                <InputOTPGroup className="gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <InputOTPSlot
+                      key={index}
+                      index={index}
+                      className="w-10 h-12 text-lg bg-theme-card/50 border-theme-accent/30 text-theme-text rounded-md"
+                    />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <Button
+              onClick={handleVerifyCode}
+              disabled={verifyCodeMutation.isPending || verificationCode.length !== 6}
+              className="w-full bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold"
+              data-testid="button-verify-code"
+            >
+              {verifyCodeMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Verify Code <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={handleResendCode}
+              disabled={sendCodeMutation.isPending}
+              className="w-full text-theme-text-muted font-display"
+              data-testid="button-resend-code"
+            >
+              {sendCodeMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Resend Code
+            </Button>
           </div>
         )}
 
@@ -307,9 +471,13 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
 
             <Button
               onClick={handleProfileSubmit}
+              disabled={updateUserMutation.isPending}
               className="w-full bg-theme-highlight text-theme-surface border-theme-highlight font-display font-bold glow-border-gold"
               data-testid="button-profile-submit"
             >
+              {updateUserMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
               Continue <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>

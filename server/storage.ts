@@ -53,7 +53,14 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id, createdAt: new Date() };
+    const user: User = { 
+      id, 
+      email: insertUser.email ?? null,
+      phone: insertUser.phone ?? null,
+      name: insertUser.name ?? null,
+      avatar: insertUser.avatar ?? null,
+      createdAt: new Date() 
+    };
     this.users.set(id, user);
     return user;
   }
@@ -80,7 +87,8 @@ export class MemStorage implements IStorage {
   }
 
   async deleteVerificationCodes(identifier: string): Promise<void> {
-    for (const [id, vc] of this.verificationCodes.entries()) {
+    const entries = Array.from(this.verificationCodes.entries());
+    for (const [id, vc] of entries) {
       if (vc.identifier === identifier) {
         this.verificationCodes.delete(id);
       }
