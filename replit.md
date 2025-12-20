@@ -65,13 +65,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Report & Block System
 
-### Email Integration Note
-Reports are intended to be sent to `hello@wayfinder.cool`. Currently, the email integration is not configured. Reports are logged to the server console. To enable email notifications:
-1. Set up Resend or SendGrid integration via Replit's integrations panel
-2. Update `server/storage.ts` `createReport` method to send emails using the configured service
+### Email Integration
+Reports are sent to `hello@wayfinder.cool` via Resend API. The `RESEND_API_KEY` secret must be configured for email delivery to work.
 
 ### Current Implementation
 - Reports and blocks are stored in-memory (MemStorage)
 - Report reasons: Harassment, Inappropriate content, Spam/scam, Fake profile, Offensive behavior, Privacy violation, Other
 - Users can report AND block simultaneously
 - Block status can be checked and removed
+- Email notifications sent via Resend when reports are submitted

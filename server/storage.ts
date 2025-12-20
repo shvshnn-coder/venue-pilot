@@ -1,5 +1,8 @@
 import { type User, type InsertUser, type InsertReport, type UserReport, type InsertBlock, type UserBlock } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -50,14 +53,27 @@ export class MemStorage implements IStorage {
       additionalDetails: insertReport.additionalDetails ?? null
     };
     this.reports.set(id, report);
-    console.log(`[REPORT] New report submitted to hello@wayfinder.cool:`, {
-      id: report.id,
-      reporterId: report.reporterId,
-      reportedUserId: report.reportedUserId,
-      reason: report.reason,
-      additionalDetails: report.additionalDetails,
-      createdAt: report.createdAt
-    });
+    
+    try {
+      await resend.emails.send({
+        from: "AURA Reports <onboarding@resend.dev>",
+        to: "hello@wayfinder.cool",
+        subject: `[AURA Report] ${report.reason}`,
+        html: `
+          <h2>New User Report</h2>
+          <p><strong>Report ID:</strong> ${report.id}</p>
+          <p><strong>Reporter ID:</strong> ${report.reporterId}</p>
+          <p><strong>Reported User ID:</strong> ${report.reportedUserId}</p>
+          <p><strong>Reason:</strong> ${report.reason}</p>
+          <p><strong>Additional Details:</strong> ${report.additionalDetails || "None provided"}</p>
+          <p><strong>Submitted:</strong> ${report.createdAt.toISOString()}</p>
+        `,
+      });
+      console.log(`[REPORT] Email sent to hello@wayfinder.cool for report ${report.id}`);
+    } catch (error) {
+      console.error(`[REPORT] Failed to send email for report ${report.id}:`, error);
+    }
+    
     return report;
   }
 
