@@ -1,8 +1,42 @@
 import { type User, type InsertUser, type InsertReport, type UserReport, type InsertBlock, type UserBlock, type VerificationCode, type InsertVerificationCode } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+
+async function sendBrevoEmail(to: string, subject: string, htmlContent: string): Promise<boolean> {
+  if (!BREVO_API_KEY) {
+    console.error("[EMAIL] BREVO_API_KEY not configured");
+    return false;
+  }
+  
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: "AURA", email: "noreply@wayfinder.cool" },
+        to: [{ email: to }],
+        subject,
+        htmlContent,
+      }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("[EMAIL] Brevo API error:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("[EMAIL] Failed to send via Brevo:", error);
+    return false;
+  }
+}
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -96,28 +130,24 @@ export class MemStorage implements IStorage {
   }
 
   async sendVerificationEmail(email: string, code: string): Promise<boolean> {
-    try {
-      await resend.emails.send({
-        from: "AURA <onboarding@resend.dev>",
-        to: email,
-        subject: `Your AURA verification code: ${code}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
-            <h1 style="color: #1a1a2e; text-align: center;">AURA</h1>
-            <p style="color: #666; text-align: center;">Your verification code is:</p>
-            <div style="background: #f0f0f0; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1a1a2e;">${code}</span>
-            </div>
-            <p style="color: #999; font-size: 12px; text-align: center;">This code expires in 10 minutes.</p>
-          </div>
-        `,
-      });
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #1a1a2e; text-align: center;">AURA</h1>
+        <p style="color: #666; text-align: center;">Your verification code is:</p>
+        <div style="background: #f0f0f0; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1a1a2e;">${code}</span>
+        </div>
+        <p style="color: #999; font-size: 12px; text-align: center;">This code expires in 10 minutes.</p>
+      </div>
+    `;
+    
+    const sent = await sendBrevoEmail(email, `Your AURA verification code: ${code}`, htmlContent);
+    if (sent) {
       console.log(`[AUTH] Verification email sent to ${email}`);
-      return true;
-    } catch (error) {
-      console.error(`[AUTH] Failed to send verification email to ${email}:`, error);
-      return false;
+    } else {
+      console.error(`[AUTH] Failed to send verification email to ${email}`);
     }
+    return sent;
   }
 
   async createReport(insertReport: InsertReport): Promise<UserReport> {
@@ -130,24 +160,21 @@ export class MemStorage implements IStorage {
     };
     this.reports.set(id, report);
     
-    try {
-      await resend.emails.send({
-        from: "AURA Reports <onboarding@resend.dev>",
-        to: "hello@wayfinder.cool",
-        subject: `[AURA Report] ${report.reason}`,
-        html: `
-          <h2>New User Report</h2>
-          <p><strong>Report ID:</strong> ${report.id}</p>
-          <p><strong>Reporter ID:</strong> ${report.reporterId}</p>
-          <p><strong>Reported User ID:</strong> ${report.reportedUserId}</p>
-          <p><strong>Reason:</strong> ${report.reason}</p>
-          <p><strong>Additional Details:</strong> ${report.additionalDetails || "None provided"}</p>
-          <p><strong>Submitted:</strong> ${report.createdAt.toISOString()}</p>
-        `,
-      });
+    const htmlContent = `
+      <h2>New User Report</h2>
+      <p><strong>Report ID:</strong> ${report.id}</p>
+      <p><strong>Reporter ID:</strong> ${report.reporterId}</p>
+      <p><strong>Reported User ID:</strong> ${report.reportedUserId}</p>
+      <p><strong>Reason:</strong> ${report.reason}</p>
+      <p><strong>Additional Details:</strong> ${report.additionalDetails || "None provided"}</p>
+      <p><strong>Submitted:</strong> ${report.createdAt.toISOString()}</p>
+    `;
+    
+    const sent = await sendBrevoEmail("hello@wayfinder.cool", `[AURA Report] ${report.reason}`, htmlContent);
+    if (sent) {
       console.log(`[REPORT] Email sent to hello@wayfinder.cool for report ${report.id}`);
-    } catch (error) {
-      console.error(`[REPORT] Failed to send email for report ${report.id}:`, error);
+    } else {
+      console.error(`[REPORT] Failed to send email for report ${report.id}`);
     }
     
     return report;
