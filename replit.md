@@ -74,7 +74,7 @@ Users can sign up and log in using their phone number or email address. A 6-digi
 - `PATCH /api/auth/user/:id` - Updates user profile (name, avatar)
 
 ### Email Verification
-Email verification codes are sent via Brevo API. The `BREVO_API_KEY` secret is required. You can find your API key in your Brevo account under SMTP & API > API Keys.
+Email verification codes are sent via Resend API. The `RESEND_API_KEY` secret is required.
 
 ### SMS Verification
 SMS verification requires Twilio integration. Currently, phone verification codes are logged to the server console. To enable SMS delivery:
