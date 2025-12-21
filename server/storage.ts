@@ -4,6 +4,46 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+
+async function sendTwilioSMS(to: string, body: string): Promise<boolean> {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+    console.error("[SMS] Twilio credentials not configured");
+    return false;
+  }
+  
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+    const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64');
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: to,
+        From: TWILIO_PHONE_NUMBER,
+        Body: body,
+      }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("[SMS] Twilio API error:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("[SMS] Failed to send via Twilio:", error);
+    return false;
+  }
+}
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -14,6 +54,7 @@ export interface IStorage {
   getVerificationCode(identifier: string, code: string, type: string): Promise<VerificationCode | undefined>;
   deleteVerificationCodes(identifier: string): Promise<void>;
   sendVerificationEmail(email: string, code: string): Promise<boolean>;
+  sendVerificationSMS(phone: string, code: string): Promise<boolean>;
   createReport(report: InsertReport): Promise<UserReport>;
   getReportsByReporter(reporterId: string): Promise<UserReport[]>;
   createBlock(block: InsertBlock): Promise<UserBlock>;
@@ -118,6 +159,17 @@ export class MemStorage implements IStorage {
       console.error(`[AUTH] Failed to send verification email to ${email}:`, error);
       return false;
     }
+  }
+
+  async sendVerificationSMS(phone: string, code: string): Promise<boolean> {
+    const message = `Your AURA verification code is: ${code}. It expires in 10 minutes.`;
+    const sent = await sendTwilioSMS(phone, message);
+    if (sent) {
+      console.log(`[AUTH] Verification SMS sent to ${phone}`);
+    } else {
+      console.error(`[AUTH] Failed to send verification SMS to ${phone}`);
+    }
+    return sent;
   }
 
   async createReport(insertReport: InsertReport): Promise<UserReport> {

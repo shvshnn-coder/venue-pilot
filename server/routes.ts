@@ -66,7 +66,10 @@ export async function registerRoutes(
           return res.status(500).json({ error: "Failed to send verification email" });
         }
       } else {
-        console.log(`[AUTH] SMS verification code for ${identifier}: ${code} (SMS delivery not configured - set up Twilio integration)`);
+        const sent = await storage.sendVerificationSMS(identifier, code);
+        if (!sent) {
+          console.log(`[AUTH] SMS verification code for ${identifier}: ${code} (fallback - Twilio may not be configured)`);
+        }
       }
 
       res.json({ success: true, message: `Verification code sent to ${type}` });

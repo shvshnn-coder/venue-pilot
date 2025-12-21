@@ -77,9 +77,12 @@ Users can sign up and log in using their phone number or email address. A 6-digi
 Email verification codes are sent via Resend API. The `RESEND_API_KEY` secret is required.
 
 ### SMS Verification
-SMS verification requires Twilio integration. Currently, phone verification codes are logged to the server console. To enable SMS delivery:
-1. Set up Twilio integration via Replit's integrations panel
-2. Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER secrets
+SMS verification is configured via Twilio. The following secrets are required:
+- `TWILIO_ACCOUNT_SID` - Your Twilio Account SID
+- `TWILIO_AUTH_TOKEN` - Your Twilio Auth Token
+- `TWILIO_PHONE_NUMBER` - Your Twilio phone number (format: +1XXXXXXXXXX)
+
+If Twilio is not configured, verification codes will be logged to the server console as a fallback.
 
 ### Current Implementation
 - Verification codes expire after 10 minutes
