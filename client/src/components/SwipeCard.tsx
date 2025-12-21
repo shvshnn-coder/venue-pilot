@@ -94,7 +94,7 @@ export default function SwipeCard({
 
   const getOpacity = () => {
     if (!isTop) {
-      return stackIndex === 1 && topCardDragging ? 1 : 0;
+      return 0;
     }
     return 1;
   };
@@ -194,13 +194,13 @@ export default function SwipeCard({
 
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-between w-full px-4 pointer-events-none">
         <div 
-          className="border-2 border-theme-accent text-theme-accent font-bold text-2xl px-6 py-2 rounded-lg -rotate-12 transition-opacity"
+          className="border-2 border-red-500 text-red-500 font-bold text-2xl px-6 py-2 rounded-lg -rotate-12 transition-opacity bg-red-500/10"
           style={{ opacity: swipeOpacity.left }}
         >
           SKIP
         </div>
         <div 
-          className="border-2 border-theme-highlight text-theme-highlight font-bold text-2xl px-6 py-2 rounded-lg rotate-12 transition-opacity"
+          className="border-2 border-green-500 text-green-500 font-bold text-2xl px-6 py-2 rounded-lg rotate-12 transition-opacity bg-green-500/10"
           style={{ opacity: swipeOpacity.right }}
         >
           {type === 'attendee' ? 'CONNECT' : 'INTERESTED'}
