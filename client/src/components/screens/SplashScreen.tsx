@@ -1,65 +1,61 @@
 import { useEffect, useState } from "react";
+import splashImage from "@assets/20251222_021603_0000_1766341481797.png";
 
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
 export default function SplashScreen({ onComplete }: SplashScreenProps) {
-  const [dotCount, setDotCount] = useState(1);
+  const [fadeIn, setFadeIn] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const dotInterval = setInterval(() => {
-      setDotCount(prev => (prev % 3) + 1);
-    }, 500);
+    setFadeIn(true);
+    
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) return 100;
+        return prev + 4;
+      });
+    }, 100);
 
     const timer = setTimeout(() => {
       onComplete();
-    }, 2500);
+    }, 2800);
 
     return () => {
-      clearInterval(dotInterval);
+      clearInterval(progressInterval);
       clearTimeout(timer);
     };
   }, [onComplete]);
 
-  const dots = '.'.repeat(dotCount);
-
   return (
     <div 
-      className="h-screen w-full flex flex-col items-center justify-center"
-      style={{
-        background: 'var(--app-gradient)'
-      }}
+      className="h-screen w-full flex flex-col items-center justify-center relative overflow-hidden"
       data-testid="screen-splash"
     >
-      <div className="relative">
-        <div className="absolute -inset-20 bg-theme-accent/10 rounded-full blur-3xl animate-pulse" />
-        <h1 className="font-display text-4xl font-bold text-theme-highlight glow-text-gold relative z-10">
-          AURA
-        </h1>
-      </div>
+      <img 
+        src={splashImage} 
+        alt="Grid Way" 
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}
+      />
       
-      <div className="mt-12 flex items-baseline">
-        <span className="font-display text-2xl text-theme-accent glow-text-teal">
-          This way
-        </span>
-        <span className="font-display text-2xl text-theme-accent glow-text-teal w-8">
-          {dots}
-        </span>
-      </div>
-
-      <div className="mt-8 flex gap-2">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              i < dotCount ? 'bg-theme-highlight glow-border-gold' : 'bg-theme-accent/30'
-            }`}
-            style={{
-              animationDelay: `${i * 0.15}s`
-            }}
-          />
-        ))}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+      
+      <div className={`relative z-10 flex flex-col items-center transition-all duration-1000 ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className="mt-48" />
+        
+        <div className="flex flex-col items-center gap-4 mt-auto mb-16">
+          <div className="w-48 h-1 bg-white/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-100 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span className="text-white/60 text-sm font-medium tracking-wider">
+            Loading{'.'.repeat((Math.floor(progress / 25) % 3) + 1)}
+          </span>
+        </div>
       </div>
     </div>
   );

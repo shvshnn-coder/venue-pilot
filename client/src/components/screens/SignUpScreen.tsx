@@ -199,8 +199,8 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
       data-testid="screen-signup"
     >
       <div className="text-center mb-8 pt-8">
-        <h1 className="font-display text-3xl font-bold text-theme-highlight glow-text-gold">
-          AURA
+        <h1 className="font-display text-2xl font-bold text-theme-highlight glow-text-gold">
+          Grid Way
         </h1>
         <p className="text-theme-text-muted mt-2 text-sm">
           {step === 'auth' && 'Join the experience'}
@@ -492,7 +492,7 @@ export default function SignUpScreen({ onComplete }: SignUpScreenProps) {
             <div>
               <h3 className="font-display text-xl text-theme-highlight mb-2">Enable Location</h3>
               <p className="text-theme-text-muted text-sm">
-                Allow AURA to access your location to discover events happening near you.
+                Allow Grid Way to access your location to discover events happening near you.
               </p>
             </div>
 

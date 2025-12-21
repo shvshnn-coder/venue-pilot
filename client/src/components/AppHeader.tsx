@@ -13,10 +13,10 @@ export default function AppHeader({ user }: AppHeaderProps) {
       data-testid="header-container"
     >
       <h1 
-        className="font-display text-2xl font-bold tracking-widest text-theme-highlight glow-text-gold"
+        className="font-display text-xl font-bold tracking-wider text-theme-highlight glow-text-gold"
         data-testid="text-app-title"
       >
-        AURA
+        Grid Way
       </h1>
       <div className="flex items-center gap-3">
         <span className="text-sm text-theme-text-muted" data-testid="text-user-name">

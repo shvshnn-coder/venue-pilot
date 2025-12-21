@@ -139,12 +139,12 @@ export class MemStorage implements IStorage {
   async sendVerificationEmail(email: string, code: string): Promise<boolean> {
     try {
       const result = await resend.emails.send({
-        from: "AURA <onboarding@resend.dev>",
+        from: "Grid Way <onboarding@resend.dev>",
         to: email,
-        subject: `Your AURA verification code: ${code}`,
+        subject: `Your Grid Way verification code: ${code}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
-            <h1 style="color: #1a1a2e; text-align: center;">AURA</h1>
+            <h1 style="color: #1a1a2e; text-align: center;">Grid Way</h1>
             <p style="color: #666; text-align: center;">Your verification code is:</p>
             <div style="background: #f0f0f0; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
               <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1a1a2e;">${code}</span>
@@ -162,7 +162,7 @@ export class MemStorage implements IStorage {
   }
 
   async sendVerificationSMS(phone: string, code: string): Promise<boolean> {
-    const message = `Your AURA verification code is: ${code}. It expires in 10 minutes.`;
+    const message = `Your Grid Way verification code is: ${code}. It expires in 10 minutes.`;
     const sent = await sendTwilioSMS(phone, message);
     if (sent) {
       console.log(`[AUTH] Verification SMS sent to ${phone}`);
@@ -184,9 +184,9 @@ export class MemStorage implements IStorage {
     
     try {
       await resend.emails.send({
-        from: "AURA Reports <onboarding@resend.dev>",
+        from: "Grid Way Reports <onboarding@resend.dev>",
         to: "hello@wayfinder.cool",
-        subject: `[AURA Report] ${report.reason}`,
+        subject: `[Grid Way Report] ${report.reason}`,
         html: `
           <h2>New User Report</h2>
           <p><strong>Report ID:</strong> ${report.id}</p>

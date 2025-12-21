@@ -1,8 +1,8 @@
-# AURA Event Navigator
+# Grid Way Event Navigator
 
 ## Overview
 
-AURA is a mobile-first event discovery and networking application designed for conferences and venues. The app features a futuristic, sci-fi inspired dark theme with swipe-based card interactions for discovering events and connecting with attendees. Users can browse events, manage their calendar, network with other attendees, and customize their preferences through an intuitive gesture-driven interface.
+Grid Way is a mobile-first event discovery and networking application designed for conferences and venues. The app features a futuristic, sci-fi inspired dark theme with swipe-based card interactions for discovering events and connecting with attendees. Users can browse events, manage their calendar, network with other attendees, and customize their preferences through an intuitive gesture-driven interface.
 
 ## User Preferences
 
