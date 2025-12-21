@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertReportSchema, insertBlockSchema, sendCodeSchema, verifyCodeSchema } from "@shared/schema";
+import { insertReportSchema, insertBlockSchema, sendCodeSchema, verifyCodeSchema, insertSwipeSchema, insertConnectionSchema } from "@shared/schema";
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -205,6 +205,89 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error checking block status:", error);
       res.status(500).json({ error: "Failed to check block status" });
+    }
+  });
+
+  app.post("/api/swipes", async (req, res) => {
+    try {
+      const parsed = insertSwipeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid swipe data", details: parsed.error.errors });
+      }
+      const existing = await storage.getSwipe(parsed.data.userId, parsed.data.targetId, parsed.data.targetType);
+      if (existing) {
+        return res.status(409).json({ error: "Already swiped on this item" });
+      }
+      const swipe = await storage.createSwipe(parsed.data);
+      
+      if (parsed.data.targetType === 'attendee' && parsed.data.direction === 'right') {
+        await storage.createConnection({
+          userId: parsed.data.userId,
+          connectedUserId: parsed.data.targetId,
+        });
+      }
+      res.status(201).json(swipe);
+    } catch (error) {
+      console.error("Error creating swipe:", error);
+      res.status(500).json({ error: "Failed to create swipe" });
+    }
+  });
+
+  app.get("/api/swipes/:userId", async (req, res) => {
+    try {
+      const swipes = await storage.getSwipesByUser(req.params.userId);
+      res.json(swipes);
+    } catch (error) {
+      console.error("Error fetching swipes:", error);
+      res.status(500).json({ error: "Failed to fetch swipes" });
+    }
+  });
+
+  app.get("/api/connections/:userId", async (req, res) => {
+    try {
+      const connections = await storage.getConnectionsByUser(req.params.userId);
+      res.json(connections);
+    } catch (error) {
+      console.error("Error fetching connections:", error);
+      res.status(500).json({ error: "Failed to fetch connections" });
+    }
+  });
+
+  app.delete("/api/connections/:userId/:connectedUserId", async (req, res) => {
+    try {
+      const { userId, connectedUserId } = req.params;
+      const removed = await storage.removeConnection(userId, connectedUserId);
+      if (removed) {
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: "Connection not found" });
+      }
+    } catch (error) {
+      console.error("Error removing connection:", error);
+      res.status(500).json({ error: "Failed to remove connection" });
+    }
+  });
+
+  app.get("/api/venue/locations", async (req, res) => {
+    try {
+      const locations = await storage.getVenueLocations();
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching venue locations:", error);
+      res.status(500).json({ error: "Failed to fetch venue locations" });
+    }
+  });
+
+  app.get("/api/venue/locations/:id", async (req, res) => {
+    try {
+      const location = await storage.getVenueLocation(req.params.id);
+      if (!location) {
+        return res.status(404).json({ error: "Location not found" });
+      }
+      res.json(location);
+    } catch (error) {
+      console.error("Error fetching venue location:", error);
+      res.status(500).json({ error: "Failed to fetch venue location" });
     }
   });
 

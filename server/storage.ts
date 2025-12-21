@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type InsertReport, type UserReport, type InsertBlock, type UserBlock, type VerificationCode, type InsertVerificationCode } from "@shared/schema";
+import { type User, type InsertUser, type InsertReport, type UserReport, type InsertBlock, type UserBlock, type VerificationCode, type InsertVerificationCode, type Swipe, type InsertSwipe, type Connection, type InsertConnection, type VenueLocation } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { Resend } from "resend";
 
@@ -61,6 +61,14 @@ export interface IStorage {
   removeBlock(blockerId: string, blockedUserId: string): Promise<boolean>;
   getBlocksByBlocker(blockerId: string): Promise<UserBlock[]>;
   isBlocked(blockerId: string, blockedUserId: string): Promise<boolean>;
+  createSwipe(swipe: InsertSwipe): Promise<Swipe>;
+  getSwipesByUser(userId: string): Promise<Swipe[]>;
+  getSwipe(userId: string, targetId: string, targetType: string): Promise<Swipe | undefined>;
+  createConnection(connection: InsertConnection): Promise<Connection>;
+  getConnectionsByUser(userId: string): Promise<Connection[]>;
+  removeConnection(userId: string, connectedUserId: string): Promise<boolean>;
+  getVenueLocations(): Promise<VenueLocation[]>;
+  getVenueLocation(id: string): Promise<VenueLocation | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -68,12 +76,31 @@ export class MemStorage implements IStorage {
   private reports: Map<string, UserReport>;
   private blocks: Map<string, UserBlock>;
   private verificationCodes: Map<string, VerificationCode>;
+  private swipes: Map<string, Swipe>;
+  private connections: Map<string, Connection>;
+  private venueLocations: Map<string, VenueLocation>;
 
   constructor() {
     this.users = new Map();
     this.reports = new Map();
     this.blocks = new Map();
     this.verificationCodes = new Map();
+    this.swipes = new Map();
+    this.connections = new Map();
+    this.venueLocations = new Map();
+    this.initializeVenueLocations();
+  }
+
+  private initializeVenueLocations() {
+    const locations: VenueLocation[] = [
+      { id: "loc-1", name: "Main Stage", floor: "L1", zone: "A", x: "50", y: "20", eventCount: "3" },
+      { id: "loc-2", name: "Tech Hall", floor: "L2", zone: "B", x: "25", y: "45", eventCount: "5" },
+      { id: "loc-3", name: "Workshop Room", floor: "L2", zone: "C", x: "75", y: "45", eventCount: "2" },
+      { id: "loc-4", name: "Networking Lounge", floor: "L3", zone: "D", x: "50", y: "70", eventCount: "4" },
+      { id: "loc-5", name: "Exhibition Hall", floor: "L1", zone: "E", x: "15", y: "85", eventCount: "8" },
+      { id: "loc-6", name: "VIP Lounge", floor: "L5", zone: "F", x: "85", y: "85", eventCount: "1" },
+    ];
+    locations.forEach(loc => this.venueLocations.set(loc.id, loc));
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -239,6 +266,58 @@ export class MemStorage implements IStorage {
     return Array.from(this.blocks.values()).some(
       (block) => block.blockerId === blockerId && block.blockedUserId === blockedUserId
     );
+  }
+
+  async createSwipe(insertSwipe: InsertSwipe): Promise<Swipe> {
+    const id = randomUUID();
+    const swipe: Swipe = { ...insertSwipe, id, createdAt: new Date() };
+    this.swipes.set(id, swipe);
+    return swipe;
+  }
+
+  async getSwipesByUser(userId: string): Promise<Swipe[]> {
+    return Array.from(this.swipes.values()).filter(
+      (swipe) => swipe.userId === userId
+    );
+  }
+
+  async getSwipe(userId: string, targetId: string, targetType: string): Promise<Swipe | undefined> {
+    return Array.from(this.swipes.values()).find(
+      (swipe) => swipe.userId === userId && swipe.targetId === targetId && swipe.targetType === targetType
+    );
+  }
+
+  async createConnection(insertConnection: InsertConnection): Promise<Connection> {
+    const id = randomUUID();
+    const connection: Connection = { ...insertConnection, id, createdAt: new Date() };
+    this.connections.set(id, connection);
+    return connection;
+  }
+
+  async getConnectionsByUser(userId: string): Promise<Connection[]> {
+    return Array.from(this.connections.values()).filter(
+      (conn) => conn.userId === userId || conn.connectedUserId === userId
+    );
+  }
+
+  async removeConnection(userId: string, connectedUserId: string): Promise<boolean> {
+    const connEntry = Array.from(this.connections.entries()).find(
+      ([, conn]) => (conn.userId === userId && conn.connectedUserId === connectedUserId) ||
+                    (conn.userId === connectedUserId && conn.connectedUserId === userId)
+    );
+    if (connEntry) {
+      this.connections.delete(connEntry[0]);
+      return true;
+    }
+    return false;
+  }
+
+  async getVenueLocations(): Promise<VenueLocation[]> {
+    return Array.from(this.venueLocations.values());
+  }
+
+  async getVenueLocation(id: string): Promise<VenueLocation | undefined> {
+    return this.venueLocations.get(id);
   }
 }
 

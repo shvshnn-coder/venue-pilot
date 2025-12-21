@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import CardStack from "../CardStack";
 import { Attendee } from "@/lib/mockData";
 import { Badge } from "@/components/ui/badge";
@@ -11,28 +12,59 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ReportBlockModal from "../ReportBlockModal";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface AttendeesScreenProps {
   attendees: Attendee[];
+  userId?: string;
   onSwipe?: (id: string, direction: 'left' | 'right') => void;
 }
 
-export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenProps) {
+interface Swipe {
+  id: string;
+  userId: string;
+  targetId: string;
+  targetType: string;
+  direction: string;
+}
+
+export default function AttendeesScreen({ attendees, userId = "current-user", onSwipe }: AttendeesScreenProps) {
   const [viewMode, setViewMode] = useState<'discover' | 'connections'>('discover');
-  const [localAttendees, setLocalAttendees] = useState(attendees);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedAttendee, setSelectedAttendee] = useState<Attendee | null>(null);
-  const currentUserId = "current-user";
 
-  const connections = useMemo(() => 
-    localAttendees.filter(a => a.swiped === 'right'), 
-    [localAttendees]
-  );
+  const { data: swipes = [] } = useQuery<Swipe[]>({
+    queryKey: ["/api/swipes", userId],
+  });
+
+  const swipeMutation = useMutation({
+    mutationFn: async (data: { targetId: string; direction: string }) => {
+      return apiRequest("POST", "/api/swipes", {
+        userId,
+        targetId: data.targetId,
+        targetType: "attendee",
+        direction: data.direction,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/swipes", userId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/connections", userId] });
+    },
+  });
+
+  const attendeeSwipes = swipes.filter(s => s.targetType === 'attendee');
+  const swipedAttendeeIds = new Set(attendeeSwipes.map(s => s.targetId));
+  const unswipedAttendees = attendees.filter(a => !swipedAttendeeIds.has(a.id));
+  
+  const connections = useMemo(() => {
+    const connectedIds = attendeeSwipes
+      .filter(s => s.direction === 'right')
+      .map(s => s.targetId);
+    return attendees.filter(a => connectedIds.includes(a.id));
+  }, [attendees, attendeeSwipes]);
 
   const handleSwipe = (id: string, direction: 'left' | 'right') => {
-    setLocalAttendees(prev => 
-      prev.map(a => a.id === id ? { ...a, swiped: direction } : a)
-    );
+    swipeMutation.mutate({ targetId: id, direction });
     onSwipe?.(id, direction);
   };
 
@@ -66,7 +98,7 @@ export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenP
       {viewMode === 'discover' ? (
         <div className="flex-grow relative">
           <CardStack 
-            items={localAttendees.filter(a => a.swiped === null)} 
+            items={unswipedAttendees} 
             type="attendee" 
             onSwipe={handleSwipe}
           />
@@ -144,7 +176,7 @@ export default function AttendeesScreen({ attendees, onSwipe }: AttendeesScreenP
           }}
           targetUserId={selectedAttendee.id}
           targetUserName={selectedAttendee.name}
-          currentUserId={currentUserId}
+          currentUserId={userId}
           mode="both"
         />
       )}

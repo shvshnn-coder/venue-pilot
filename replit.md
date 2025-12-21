@@ -101,3 +101,35 @@ Reports are sent to `hello@wayfinder.cool` via Resend API. The `RESEND_API_KEY` 
 - Users can report AND block simultaneously
 - Block status can be checked and removed
 - Email notifications sent via Resend when reports are submitted
+
+## Swipes & Connections System
+
+### Swipe Functionality
+Users can swipe left (pass) or right (like) on events and attendees. Swipes are persisted to allow filtering of already-seen items.
+
+### API Endpoints
+- `POST /api/swipes` - Records a swipe action (userId, targetId, targetType, direction)
+- `GET /api/swipes/:userId` - Gets all swipes for a user
+- `GET /api/connections/:userId` - Gets all connections for a user
+- `DELETE /api/connections/:userId/:connectedUserId` - Removes a connection
+
+### Connections
+- Swiping right on an attendee automatically creates a connection
+- Connections are displayed in the "Connections" tab of the Attendees screen
+- Connections can be removed or users can be reported/blocked
+
+## Interactive Mini Map
+
+### Venue Map Feature
+The mini map provides an interactive venue exploration experience with floor-by-floor navigation.
+
+### API Endpoints
+- `GET /api/venue/locations` - Gets all venue locations
+- `GET /api/venue/locations/:id` - Gets a specific venue location
+
+### Features
+- Tap to expand full-screen venue map
+- Floor selector (L1, L2, L3, L5) to navigate between levels
+- Interactive SVG map with clickable location markers
+- Selected location shows name, floor, zone, and event count
+- Visual legend for location markers

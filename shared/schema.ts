@@ -89,3 +89,47 @@ export const insertBlockSchema = createInsertSchema(userBlocks).omit({
 
 export type InsertBlock = z.infer<typeof insertBlockSchema>;
 export type UserBlock = typeof userBlocks.$inferSelect;
+
+export const swipes = pgTable("swipes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  targetId: varchar("target_id").notNull(),
+  targetType: text("target_type").notNull(),
+  direction: text("direction").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSwipeSchema = createInsertSchema(swipes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSwipe = z.infer<typeof insertSwipeSchema>;
+export type Swipe = typeof swipes.$inferSelect;
+
+export const connections = pgTable("connections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  connectedUserId: varchar("connected_user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertConnectionSchema = createInsertSchema(connections).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertConnection = z.infer<typeof insertConnectionSchema>;
+export type Connection = typeof connections.$inferSelect;
+
+export const venueLocations = pgTable("venue_locations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  floor: text("floor").notNull(),
+  zone: text("zone").notNull(),
+  x: text("x").notNull(),
+  y: text("y").notNull(),
+  eventCount: text("event_count").default("0"),
+});
+
+export type VenueLocation = typeof venueLocations.$inferSelect;
