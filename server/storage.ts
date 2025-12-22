@@ -1,42 +1,75 @@
-import { type User, type InsertUser, type InsertReport, type UserReport, type InsertBlock, type UserBlock, type VerificationCode, type InsertVerificationCode, type Swipe, type InsertSwipe, type Connection, type InsertConnection, type VenueLocation } from "@shared/schema";
+import {
+  type User,
+  type InsertUser,
+  type InsertReport,
+  type UserReport,
+  type InsertBlock,
+  type UserBlock,
+  type VerificationCode,
+  type InsertVerificationCode,
+  type Swipe,
+  type InsertSwipe,
+  type Connection,
+  type InsertConnection,
+  type VenueLocation,
+} from "@shared/schema";
 import { randomUUID } from "crypto";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// ✅ Lazy-init Resend so env vars can be loaded before first use (prevents import-time crash)
+let resendClient: Resend | null = null;
 
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    // Don’t crash the whole server at import time; just disable email sending.
+    console.warn("[EMAIL] RESEND_API_KEY not set. Email sending is disabled.");
+    return null;
+  }
+  if (!resendClient) resendClient = new Resend(key);
+  return resendClient;
+}
+
+// ✅ Lazy Twilio config (read env at call time, not import time)
+function getTwilioConfig() {
+  return {
+    sid: process.env.TWILIO_ACCOUNT_SID,
+    token: process.env.TWILIO_AUTH_TOKEN,
+    from: process.env.TWILIO_PHONE_NUMBER,
+  };
+}
 
 async function sendTwilioSMS(to: string, body: string): Promise<boolean> {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
-    console.error("[SMS] Twilio credentials not configured");
+  const { sid, token, from } = getTwilioConfig();
+
+  if (!sid || !token || !from) {
+    console.warn("[SMS] Twilio credentials not configured. SMS sending is disabled.");
     return false;
   }
-  
+
   try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
-    const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64');
-    
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
+    const auth = Buffer.from(`${sid}:${token}`).toString("base64");
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Authorization": `Basic ${auth}`,
+        Authorization: `Basic ${auth}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
         To: to,
-        From: TWILIO_PHONE_NUMBER,
+        From: from,
         Body: body,
       }),
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       console.error("[SMS] Twilio API error:", error);
       return false;
     }
-    
+
     return true;
   } catch (error) {
     console.error("[SMS] Failed to send via Twilio:", error);
@@ -50,23 +83,34 @@ export interface IStorage {
   getUserByPhone(phone: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
+
   createVerificationCode(data: InsertVerificationCode): Promise<VerificationCode>;
-  getVerificationCode(identifier: string, code: string, type: string): Promise<VerificationCode | undefined>;
+  getVerificationCode(
+    identifier: string,
+    code: string,
+    type: string
+  ): Promise<VerificationCode | undefined>;
   deleteVerificationCodes(identifier: string): Promise<void>;
+
   sendVerificationEmail(email: string, code: string): Promise<boolean>;
   sendVerificationSMS(phone: string, code: string): Promise<boolean>;
+
   createReport(report: InsertReport): Promise<UserReport>;
   getReportsByReporter(reporterId: string): Promise<UserReport[]>;
+
   createBlock(block: InsertBlock): Promise<UserBlock>;
   removeBlock(blockerId: string, blockedUserId: string): Promise<boolean>;
   getBlocksByBlocker(blockerId: string): Promise<UserBlock[]>;
   isBlocked(blockerId: string, blockedUserId: string): Promise<boolean>;
+
   createSwipe(swipe: InsertSwipe): Promise<Swipe>;
   getSwipesByUser(userId: string): Promise<Swipe[]>;
   getSwipe(userId: string, targetId: string, targetType: string): Promise<Swipe | undefined>;
+
   createConnection(connection: InsertConnection): Promise<Connection>;
   getConnectionsByUser(userId: string): Promise<Connection[]>;
   removeConnection(userId: string, connectedUserId: string): Promise<boolean>;
+
   getVenueLocations(): Promise<VenueLocation[]>;
   getVenueLocation(id: string): Promise<VenueLocation | undefined>;
 }
@@ -100,7 +144,7 @@ export class MemStorage implements IStorage {
       { id: "loc-5", name: "Exhibition Hall", floor: "L1", zone: "E", x: "15", y: "85", eventCount: "8" },
       { id: "loc-6", name: "VIP Lounge", floor: "L5", zone: "F", x: "85", y: "85", eventCount: "1" },
     ];
-    locations.forEach(loc => this.venueLocations.set(loc.id, loc));
+    locations.forEach((loc) => this.venueLocations.set(loc.id, loc));
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -108,26 +152,22 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
+    return Array.from(this.users.values()).find((user) => user.email === email);
   }
 
   async getUserByPhone(phone: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.phone === phone,
-    );
+    return Array.from(this.users.values()).find((user) => user.phone === phone);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { 
-      id, 
+    const user: User = {
+      id,
       email: insertUser.email ?? null,
       phone: insertUser.phone ?? null,
       name: insertUser.name ?? null,
       avatar: insertUser.avatar ?? null,
-      createdAt: new Date() 
+      createdAt: new Date(),
     };
     this.users.set(id, user);
     return user;
@@ -148,9 +188,17 @@ export class MemStorage implements IStorage {
     return code;
   }
 
-  async getVerificationCode(identifier: string, code: string, type: string): Promise<VerificationCode | undefined> {
+  async getVerificationCode(
+    identifier: string,
+    code: string,
+    type: string
+  ): Promise<VerificationCode | undefined> {
     return Array.from(this.verificationCodes.values()).find(
-      (vc) => vc.identifier === identifier && vc.code === code && vc.type === type && vc.expiresAt > new Date()
+      (vc) =>
+        vc.identifier === identifier &&
+        vc.code === code &&
+        vc.type === type &&
+        vc.expiresAt > new Date()
     );
   }
 
@@ -164,6 +212,9 @@ export class MemStorage implements IStorage {
   }
 
   async sendVerificationEmail(email: string, code: string): Promise<boolean> {
+    const resend = getResend();
+    if (!resend) return false;
+
     try {
       const result = await resend.emails.send({
         from: "Grid Way <onboarding@resend.dev>",
@@ -201,41 +252,45 @@ export class MemStorage implements IStorage {
 
   async createReport(insertReport: InsertReport): Promise<UserReport> {
     const id = randomUUID();
-    const report: UserReport = { 
-      ...insertReport, 
-      id, 
+    const report: UserReport = {
+      ...insertReport,
+      id,
       createdAt: new Date(),
-      additionalDetails: insertReport.additionalDetails ?? null
+      additionalDetails: insertReport.additionalDetails ?? null,
     };
     this.reports.set(id, report);
-    
-    try {
-      await resend.emails.send({
-        from: "Grid Way Reports <onboarding@resend.dev>",
-        to: "hello@wayfinder.cool",
-        subject: `[Grid Way Report] ${report.reason}`,
-        html: `
-          <h2>New User Report</h2>
-          <p><strong>Report ID:</strong> ${report.id}</p>
-          <p><strong>Reporter ID:</strong> ${report.reporterId}</p>
-          <p><strong>Reported User ID:</strong> ${report.reportedUserId}</p>
-          <p><strong>Reason:</strong> ${report.reason}</p>
-          <p><strong>Additional Details:</strong> ${report.additionalDetails || "None provided"}</p>
-          <p><strong>Submitted:</strong> ${report.createdAt.toISOString()}</p>
-        `,
-      });
-      console.log(`[REPORT] Email sent to hello@wayfinder.cool for report ${report.id}`);
-    } catch (error) {
-      console.error(`[REPORT] Failed to send email for report ${report.id}:`, error);
+
+    // Fire-and-forget email; do not fail report creation if email fails
+    const resend = getResend();
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: "Grid Way Reports <onboarding@resend.dev>",
+          to: "hello@wayfinder.cool",
+          subject: `[Grid Way Report] ${report.reason}`,
+          html: `
+            <h2>New User Report</h2>
+            <p><strong>Report ID:</strong> ${report.id}</p>
+            <p><strong>Reporter ID:</strong> ${report.reporterId}</p>
+            <p><strong>Reported User ID:</strong> ${report.reportedUserId}</p>
+            <p><strong>Reason:</strong> ${report.reason}</p>
+            <p><strong>Additional Details:</strong> ${report.additionalDetails || "None provided"}</p>
+            <p><strong>Submitted:</strong> ${report.createdAt.toISOString()}</p>
+          `,
+        });
+        console.log(`[REPORT] Email sent to hello@wayfinder.cool for report ${report.id}`);
+      } catch (error) {
+        console.error(`[REPORT] Failed to send email for report ${report.id}:`, error);
+      }
+    } else {
+      console.warn("[REPORT] Email not sent (RESEND_API_KEY not set).");
     }
-    
+
     return report;
   }
 
   async getReportsByReporter(reporterId: string): Promise<UserReport[]> {
-    return Array.from(this.reports.values()).filter(
-      (report) => report.reporterId === reporterId
-    );
+    return Array.from(this.reports.values()).filter((report) => report.reporterId === reporterId);
   }
 
   async createBlock(insertBlock: InsertBlock): Promise<UserBlock> {
@@ -257,9 +312,7 @@ export class MemStorage implements IStorage {
   }
 
   async getBlocksByBlocker(blockerId: string): Promise<UserBlock[]> {
-    return Array.from(this.blocks.values()).filter(
-      (block) => block.blockerId === blockerId
-    );
+    return Array.from(this.blocks.values()).filter((block) => block.blockerId === blockerId);
   }
 
   async isBlocked(blockerId: string, blockedUserId: string): Promise<boolean> {
@@ -276,9 +329,7 @@ export class MemStorage implements IStorage {
   }
 
   async getSwipesByUser(userId: string): Promise<Swipe[]> {
-    return Array.from(this.swipes.values()).filter(
-      (swipe) => swipe.userId === userId
-    );
+    return Array.from(this.swipes.values()).filter((swipe) => swipe.userId === userId);
   }
 
   async getSwipe(userId: string, targetId: string, targetType: string): Promise<Swipe | undefined> {
@@ -302,8 +353,9 @@ export class MemStorage implements IStorage {
 
   async removeConnection(userId: string, connectedUserId: string): Promise<boolean> {
     const connEntry = Array.from(this.connections.entries()).find(
-      ([, conn]) => (conn.userId === userId && conn.connectedUserId === connectedUserId) ||
-                    (conn.userId === connectedUserId && conn.connectedUserId === userId)
+      ([, conn]) =>
+        (conn.userId === userId && conn.connectedUserId === connectedUserId) ||
+        (conn.userId === connectedUserId && conn.connectedUserId === userId)
     );
     if (connEntry) {
       this.connections.delete(connEntry[0]);
