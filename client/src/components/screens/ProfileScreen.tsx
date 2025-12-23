@@ -8,8 +8,9 @@ import { ProfileMode } from "@/App";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Calendar, MapPin, Tag, Settings } from "lucide-react";
+import { Plus, Calendar, MapPin, Tag, Settings, Check, Palette } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useTheme, Theme } from "@/contexts/ThemeContext";
 
 interface ProfileScreenProps {
   user: User;
@@ -21,8 +22,15 @@ interface ProfileScreenProps {
   onOpenSettings?: () => void;
 }
 
+const themeColors: Record<Theme, { primary: string; secondary: string; bg: string }> = {
+  'sci-fi': { primary: 'bg-[hsl(166,100%,70%)]', secondary: 'bg-[hsl(51,100%,50%)]', bg: 'bg-[hsl(210,45%,6%)]' },
+  'basic-white': { primary: 'bg-[hsl(220,90%,45%)]', secondary: 'bg-[hsl(220,90%,50%)]', bg: 'bg-[hsl(0,0%,98%)]' },
+  'wild-flowers': { primary: 'bg-[hsl(340,65%,55%)]', secondary: 'bg-[hsl(35,85%,55%)]', bg: 'bg-[hsl(45,40%,96%)]' },
+};
+
 export default function ProfileScreen({ user, pois, mode, onModeChange, onCreateEvent, events, onOpenSettings }: ProfileScreenProps) {
   const { toast } = useToast();
+  const { theme, setTheme, themes } = useTheme();
   const initials = user.name.split(' ').map(n => n[0]).join('');
   const [preferences, setPreferences] = useState({
     keynotes: 80,
@@ -80,24 +88,22 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
 
   return (
     <div className="p-4 h-full flex flex-col animate-fadeIn overflow-y-auto" data-testid="screen-profile">
-      <div className="text-center mb-4">
+      <div className="relative text-center mb-4">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onOpenSettings}
+          className="absolute top-0 right-0 text-theme-accent"
+          data-testid="button-open-settings"
+        >
+          <Settings className="w-5 h-5" />
+        </Button>
         <div className="w-20 h-20 rounded-full border-2 border-theme-highlight bg-theme-surface mx-auto mb-3 glow-border-gold flex items-center justify-center font-display text-3xl text-theme-highlight">
           {initials}
         </div>
-        <div className="flex items-center justify-center gap-2">
-          <h2 className="font-display text-2xl font-bold text-theme-highlight" data-testid="text-profile-name">
-            {user.name}
-          </h2>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onOpenSettings}
-            className="text-theme-accent"
-            data-testid="button-open-settings"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
-        </div>
+        <h2 className="font-display text-2xl font-bold text-theme-highlight" data-testid="text-profile-name">
+          {user.name}
+        </h2>
         <p className="text-sm text-theme-accent mt-1" data-testid="text-profile-role">{user.role}</p>
         <p className="text-xs text-theme-text-muted mt-2 max-w-xs mx-auto" data-testid="text-profile-tagline">
           "{user.tagline}"
@@ -168,6 +174,44 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
             <POIList pois={pois} />
           </div>
 
+          <div className="bg-theme-card/50 rounded-lg border border-theme-accent/20 p-4">
+            <h3 className="font-display text-lg text-theme-highlight mb-3 flex items-center gap-2">
+              <Palette className="w-5 h-5" /> App Theme
+            </h3>
+            <div className="space-y-2">
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTheme(t.id);
+                    toast({
+                      title: "Theme Changed",
+                      description: `Switched to ${t.name} theme.`
+                    });
+                  }}
+                  className={`w-full p-3 rounded-lg border transition-all flex items-center gap-3 hover-elevate ${
+                    theme === t.id 
+                      ? 'border-theme-highlight bg-theme-highlight/10' 
+                      : 'border-theme-accent/20 bg-theme-surface/30'
+                  }`}
+                  data-testid={`button-theme-${t.id}`}
+                >
+                  <div className="flex gap-1">
+                    <div className={`w-4 h-4 rounded-full ${themeColors[t.id].bg} border border-foreground/20`} />
+                    <div className={`w-4 h-4 rounded-full ${themeColors[t.id].primary}`} />
+                    <div className={`w-4 h-4 rounded-full ${themeColors[t.id].secondary}`} />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-display text-sm text-theme-text">{t.name}</p>
+                    <p className="text-xs text-theme-text-muted">{t.description}</p>
+                  </div>
+                  {theme === t.id && (
+                    <Check className="w-5 h-5 text-theme-highlight" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
         </>
       ) : (
         <>
