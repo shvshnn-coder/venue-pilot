@@ -91,8 +91,8 @@ export async function registerRoutes(
       const identifier = normalizeIdentifier(parsed.data.identifier, type);
       const code = parsed.data.code;
       
-      // Test bypass: code "000000" always works for development
-      const isTestBypass = code === "000000";
+      // Test bypass: code "000000" only works in development mode
+      const isTestBypass = process.env.NODE_ENV === "development" && code === "000000";
       const verificationCode = isTestBypass ? true : await storage.getVerificationCode(identifier, code, type);
 
       if (!verificationCode) {
