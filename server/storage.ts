@@ -113,6 +113,14 @@ export interface IStorage {
 
   getVenueLocations(): Promise<VenueLocation[]>;
   getVenueLocation(id: string): Promise<VenueLocation | undefined>;
+  // Chat messages
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  getChatMessages(userId1: string, userId2: string): Promise<ChatMessage[]>;
+  markMessagesAsRead(senderId: string, receiverId: string): Promise<void>;
+  getUnreadCount(userId: string): Promise<number>;
+  // User settings
+  getUserSettings(userId: string): Promise<UserSettings | undefined>;
+  createOrUpdateUserSettings(settings: InsertUserSettings): Promise<UserSettings>;
 }
 
 export class MemStorage implements IStorage {
@@ -123,6 +131,8 @@ export class MemStorage implements IStorage {
   private swipes: Map<string, Swipe>;
   private connections: Map<string, Connection>;
   private venueLocations: Map<string, VenueLocation>;
+  private chatMessages: Map<string, ChatMessage>;
+  private userSettings: Map<string, UserSettings>;
 
   constructor() {
     this.users = new Map();
@@ -132,6 +142,8 @@ export class MemStorage implements IStorage {
     this.swipes = new Map();
     this.connections = new Map();
     this.venueLocations = new Map();
+    this.chatMessages = new Map();
+    this.userSettings = new Map();
     this.initializeVenueLocations();
   }
 
@@ -370,6 +382,70 @@ export class MemStorage implements IStorage {
 
   async getVenueLocation(id: string): Promise<VenueLocation | undefined> {
     return this.venueLocations.get(id);
+  }
+
+  async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
+    const id = randomUUID();
+    const message: ChatMessage = { 
+      ...insertMessage, 
+      id, 
+      read: insertMessage.read ?? "false",
+      createdAt: new Date() 
+    };
+    this.chatMessages.set(id, message);
+    return message;
+  }
+
+  async getChatMessages(userId1: string, userId2: string): Promise<ChatMessage[]> {
+    return Array.from(this.chatMessages.values())
+      .filter(msg => 
+        (msg.senderId === userId1 && msg.receiverId === userId2) ||
+        (msg.senderId === userId2 && msg.receiverId === userId1)
+      )
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  async markMessagesAsRead(senderId: string, receiverId: string): Promise<void> {
+    const entries = Array.from(this.chatMessages.entries());
+    for (const [id, msg] of entries) {
+      if (msg.senderId === senderId && msg.receiverId === receiverId && msg.read === "false") {
+        this.chatMessages.set(id, { ...msg, read: "true" });
+      }
+    }
+  }
+
+  async getUnreadCount(userId: string): Promise<number> {
+    return Array.from(this.chatMessages.values()).filter(
+      msg => msg.receiverId === userId && msg.read === "false"
+    ).length;
+  }
+
+  async getUserSettings(userId: string): Promise<UserSettings | undefined> {
+    return Array.from(this.userSettings.values()).find(s => s.userId === userId);
+  }
+
+  async createOrUpdateUserSettings(insertSettings: InsertUserSettings): Promise<UserSettings> {
+    const existing = await this.getUserSettings(insertSettings.userId);
+    if (existing) {
+      const updated: UserSettings = { 
+        ...existing, 
+        ...insertSettings, 
+        updatedAt: new Date() 
+      };
+      this.userSettings.set(existing.id, updated);
+      return updated;
+    }
+    const id = randomUUID();
+    const settings: UserSettings = { 
+      id,
+      userId: insertSettings.userId,
+      language: insertSettings.language ?? "en",
+      invisibleMode: insertSettings.invisibleMode ?? "false",
+      isPremium: insertSettings.isPremium ?? "false",
+      updatedAt: new Date() 
+    };
+    this.userSettings.set(id, settings);
+    return settings;
   }
 }
 

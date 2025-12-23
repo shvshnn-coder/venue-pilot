@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertReportSchema, insertBlockSchema, sendCodeSchema, verifyCodeSchema, insertSwipeSchema, insertConnectionSchema } from "@shared/schema";
+import { insertReportSchema, insertBlockSchema, sendCodeSchema, verifyCodeSchema, insertSwipeSchema, insertConnectionSchema, insertChatMessageSchema, insertUserSettingsSchema } from "@shared/schema";
+import { z } from "zod";
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -288,6 +289,87 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching venue location:", error);
       res.status(500).json({ error: "Failed to fetch venue location" });
+    }
+  });
+
+  // Chat endpoints
+  app.post("/api/chat/messages", async (req, res) => {
+    try {
+      const parsed = insertChatMessageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid message data", details: parsed.error.errors });
+      }
+      const message = await storage.createChatMessage(parsed.data);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  app.get("/api/chat/messages/:userId1/:userId2", async (req, res) => {
+    try {
+      const { userId1, userId2 } = req.params;
+      const messages = await storage.getChatMessages(userId1, userId2);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/chat/read/:senderId/:receiverId", async (req, res) => {
+    try {
+      const { senderId, receiverId } = req.params;
+      await storage.markMessagesAsRead(senderId, receiverId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      res.status(500).json({ error: "Failed to mark messages as read" });
+    }
+  });
+
+  app.get("/api/chat/unread/:userId", async (req, res) => {
+    try {
+      const count = await storage.getUnreadCount(req.params.userId);
+      res.json({ unreadCount: count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ error: "Failed to fetch unread count" });
+    }
+  });
+
+  // User settings endpoints
+  app.get("/api/settings/:userId", async (req, res) => {
+    try {
+      const settings = await storage.getUserSettings(req.params.userId);
+      if (!settings) {
+        // Return default settings if none exist
+        return res.json({ 
+          userId: req.params.userId, 
+          language: "en", 
+          invisibleMode: "false",
+          isPremium: "false"
+        });
+      }
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  app.post("/api/settings", async (req, res) => {
+    try {
+      const parsed = insertUserSettingsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid settings data", details: parsed.error.errors });
+      }
+      const settings = await storage.createOrUpdateUserSettings(parsed.data);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      res.status(500).json({ error: "Failed to update settings" });
     }
   });
 

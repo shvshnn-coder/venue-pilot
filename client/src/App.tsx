@@ -11,6 +11,8 @@ import DiscoverScreen from "@/components/screens/DiscoverScreen";
 import CalendarScreen from "@/components/screens/CalendarScreen";
 import AttendeesScreen from "@/components/screens/AttendeesScreen";
 import ProfileScreen from "@/components/screens/ProfileScreen";
+import SettingsScreen from "@/components/screens/SettingsScreen";
+import ChatScreen from "@/components/screens/ChatScreen";
 import SplashScreen from "@/components/screens/SplashScreen";
 import SignUpScreen from "@/components/screens/SignUpScreen";
 import { 
@@ -25,14 +27,23 @@ import {
 
 export type ProfileMode = 'attendee' | 'organizer';
 type AppState = 'splash' | 'signup' | 'main';
+type SubScreen = 'none' | 'settings' | 'chat';
+
+interface ChatPartner {
+  id: string;
+  name: string;
+}
 
 function AuraApp() {
   const [appState, setAppState] = useState<AppState>('splash');
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
-  const [events, setEvents] = useState<Event[]>(mockEvents); // todo: remove mock functionality
-  const [attendees, setAttendees] = useState<Attendee[]>(mockAttendees); // todo: remove mock functionality
+  const [subScreen, setSubScreen] = useState<SubScreen>('none');
+  const [chatPartner, setChatPartner] = useState<ChatPartner | null>(null);
+  const [events, setEvents] = useState<Event[]>(mockEvents);
+  const [attendees, setAttendees] = useState<Attendee[]>(mockAttendees);
   const [profileMode, setProfileMode] = useState<ProfileMode>('attendee');
   const [currentUser, setCurrentUser] = useState<User>(mockUser);
+  const currentUserId = "current-user";
 
   const handleEventSwipe = (id: string, direction: 'left' | 'right') => {
     setEvents(prev => prev.map(e => e.id === id ? { ...e, swiped: direction } : e));
@@ -52,6 +63,28 @@ function AuraApp() {
     setEvents(prev => [event, ...prev]);
   };
 
+  const handleOpenSettings = () => {
+    setSubScreen('settings');
+  };
+
+  const handleCloseSettings = () => {
+    setSubScreen('none');
+  };
+
+  const handleOpenChat = (partnerId: string, partnerName: string) => {
+    setChatPartner({ id: partnerId, name: partnerName });
+    setSubScreen('chat');
+  };
+
+  const handleCloseChat = () => {
+    setChatPartner(null);
+    setSubScreen('none');
+  };
+
+  const handleProfileUpdate = (name: string, role: string) => {
+    setCurrentUser(prev => ({ ...prev, name, role }));
+  };
+
   const renderScreen = () => {
     switch (activeScreen) {
       case 'home':
@@ -61,7 +94,7 @@ function AuraApp() {
       case 'calendar':
         return <CalendarScreen events={events} />;
       case 'attendees':
-        return <AttendeesScreen attendees={attendees} onSwipe={handleAttendeeSwipe} />;
+        return <AttendeesScreen attendees={attendees} onSwipe={handleAttendeeSwipe} onOpenChat={handleOpenChat} />;
       case 'profile':
         return (
           <ProfileScreen 
@@ -71,11 +104,37 @@ function AuraApp() {
             onModeChange={setProfileMode}
             onCreateEvent={handleCreateEvent}
             events={events}
+            onOpenSettings={handleOpenSettings}
           />
         );
       default:
         return <HomeScreen events={events} onSwipe={handleEventSwipe} />;
     }
+  };
+
+  const renderSubScreen = () => {
+    if (subScreen === 'settings') {
+      return (
+        <SettingsScreen
+          onBack={handleCloseSettings}
+          userId={currentUserId}
+          userName={currentUser.name}
+          userRole={currentUser.role}
+          onProfileUpdate={handleProfileUpdate}
+        />
+      );
+    }
+    if (subScreen === 'chat' && chatPartner) {
+      return (
+        <ChatScreen
+          onBack={handleCloseChat}
+          currentUserId={currentUserId}
+          otherUserId={chatPartner.id}
+          otherUserName={chatPartner.name}
+        />
+      );
+    }
+    return null;
   };
 
   const handleSignUpComplete = (userData: { name: string; avatar?: string }) => {
@@ -117,11 +176,19 @@ function AuraApp() {
       }}
       data-testid="container-app"
     >
-      <AppHeader user={currentUser} />
-      <main className="flex-grow overflow-hidden relative">
-        {renderScreen()}
-      </main>
-      <BottomNav activeScreen={activeScreen} onNavigate={setActiveScreen} />
+      {subScreen !== 'none' ? (
+        <main className="flex-grow overflow-hidden relative">
+          {renderSubScreen()}
+        </main>
+      ) : (
+        <>
+          <AppHeader user={currentUser} />
+          <main className="flex-grow overflow-hidden relative">
+            {renderScreen()}
+          </main>
+          <BottomNav activeScreen={activeScreen} onNavigate={setActiveScreen} />
+        </>
+      )}
     </div>
   );
 }

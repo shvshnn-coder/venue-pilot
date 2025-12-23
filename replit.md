@@ -133,3 +133,40 @@ The mini map provides an interactive venue exploration experience with floor-by-
 - Interactive SVG map with clickable location markers
 - Selected location shows name, floor, zone, and event count
 - Visual legend for location markers
+
+## Settings System
+
+### Settings Page
+Accessible via gear icon in user profile. Provides centralized app configuration.
+
+### API Endpoints
+- `GET /api/settings/:userId` - Gets user settings (returns defaults if none exist)
+- `POST /api/settings` - Creates or updates user settings
+
+### Features
+- Theme selection (Sci-Fi, Basic White, Wild Flowers)
+- Language selection (English, Spanish, French, German, Chinese, Japanese)
+- Profile editing (name and role)
+- Invisible mode toggle (premium feature only)
+
+### Invisible Mode
+- Available only for premium users
+- When enabled, user is hidden from other attendees
+- Stored as user setting in backend
+
+## Chat System
+
+### Messaging for Connected Users
+Users who have mutually connected can chat with each other.
+
+### API Endpoints
+- `POST /api/chat/messages` - Sends a new message
+- `GET /api/chat/messages/:userId1/:userId2` - Gets conversation between two users
+- `POST /api/chat/read/:senderId/:receiverId` - Marks messages as read
+- `GET /api/chat/unread/:userId` - Gets unread message count
+
+### Features
+- Real-time message display with 3-second polling
+- Messages grouped by date
+- Read receipts
+- Accessible from Connections tab via message icon button

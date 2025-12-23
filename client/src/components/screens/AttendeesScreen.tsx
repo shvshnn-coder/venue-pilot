@@ -4,7 +4,7 @@ import CardStack from "../CardStack";
 import { Attendee } from "@/lib/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, MoreVertical } from "lucide-react";
+import { MessageCircle, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,7 @@ interface AttendeesScreenProps {
   attendees: Attendee[];
   userId?: string;
   onSwipe?: (id: string, direction: 'left' | 'right') => void;
+  onOpenChat?: (partnerId: string, partnerName: string) => void;
 }
 
 interface Swipe {
@@ -28,7 +29,7 @@ interface Swipe {
   direction: string;
 }
 
-export default function AttendeesScreen({ attendees, userId = "current-user", onSwipe }: AttendeesScreenProps) {
+export default function AttendeesScreen({ attendees, userId = "current-user", onSwipe, onOpenChat }: AttendeesScreenProps) {
   const [viewMode, setViewMode] = useState<'discover' | 'connections'>('discover');
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedAttendee, setSelectedAttendee] = useState<Attendee | null>(null);
@@ -137,8 +138,14 @@ export default function AttendeesScreen({ attendees, userId = "current-user", on
                     </div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                    <Button size="icon" variant="outline" className="border-theme-accent text-theme-accent" data-testid={`button-message-${attendee.id}`}>
-                      <Check className="w-4 h-4" />
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      className="border-theme-accent text-theme-accent"
+                      onClick={() => onOpenChat?.(attendee.id, attendee.name)}
+                      data-testid={`button-message-${attendee.id}`}
+                    >
+                      <MessageCircle className="w-4 h-4" />
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

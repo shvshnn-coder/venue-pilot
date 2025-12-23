@@ -8,7 +8,7 @@ import { ProfileMode } from "@/App";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Calendar, MapPin, Tag, Palette, Check } from "lucide-react";
+import { Plus, Calendar, MapPin, Tag, Settings, Check, Palette } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme, Theme } from "@/contexts/ThemeContext";
 
@@ -19,6 +19,7 @@ interface ProfileScreenProps {
   onModeChange: (mode: ProfileMode) => void;
   onCreateEvent: (event: Omit<Event, 'id' | 'swiped'>) => void;
   events: Event[];
+  onOpenSettings?: () => void;
 }
 
 const themeColors: Record<Theme, { primary: string; secondary: string; bg: string }> = {
@@ -27,7 +28,7 @@ const themeColors: Record<Theme, { primary: string; secondary: string; bg: strin
   'wild-flowers': { primary: 'bg-[hsl(340,65%,55%)]', secondary: 'bg-[hsl(35,85%,55%)]', bg: 'bg-[hsl(45,40%,96%)]' },
 };
 
-export default function ProfileScreen({ user, pois, mode, onModeChange, onCreateEvent, events }: ProfileScreenProps) {
+export default function ProfileScreen({ user, pois, mode, onModeChange, onCreateEvent, events, onOpenSettings }: ProfileScreenProps) {
   const { toast } = useToast();
   const { theme, setTheme, themes } = useTheme();
   const initials = user.name.split(' ').map(n => n[0]).join('');
@@ -87,7 +88,16 @@ export default function ProfileScreen({ user, pois, mode, onModeChange, onCreate
 
   return (
     <div className="p-4 h-full flex flex-col animate-fadeIn overflow-y-auto" data-testid="screen-profile">
-      <div className="text-center mb-4">
+      <div className="relative text-center mb-4">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onOpenSettings}
+          className="absolute top-0 right-0 text-theme-accent"
+          data-testid="button-open-settings"
+        >
+          <Settings className="w-5 h-5" />
+        </Button>
         <div className="w-20 h-20 rounded-full border-2 border-theme-highlight bg-theme-surface mx-auto mb-3 glow-border-gold flex items-center justify-center font-display text-3xl text-theme-highlight">
           {initials}
         </div>
