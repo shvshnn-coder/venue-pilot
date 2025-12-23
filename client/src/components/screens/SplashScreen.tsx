@@ -42,10 +42,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
       
-      <div className={`relative z-10 flex flex-col items-center transition-all duration-1000 ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-        <div className="mt-48" />
-        
-        <div className="flex flex-col items-center gap-4 mt-auto mb-16">
+      <div className={`absolute bottom-8 left-0 right-0 z-10 flex flex-col items-center transition-all duration-1000 ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className="flex flex-col items-center gap-3">
           <div className="w-48 h-1 bg-white/20 rounded-full overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-100 ease-out"
