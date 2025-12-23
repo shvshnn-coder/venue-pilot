@@ -74,7 +74,7 @@ Users can sign up and log in using their phone number or email address. A 6-digi
 - `PATCH /api/auth/user/:id` - Updates user profile (name, avatar)
 
 ### Email Verification
-Email verification codes are sent via Resend API. The `RESEND_API_KEY` secret is required.
+Email verification codes are sent via Resend API from hello@wayfinder.cool. The `RESEND_API_KEY` secret is required, and the wayfinder.cool domain must be verified in Resend.
 
 ### SMS Verification
 SMS verification is configured via Twilio. The following secrets are required:

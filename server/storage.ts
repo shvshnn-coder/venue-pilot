@@ -229,7 +229,7 @@ export class MemStorage implements IStorage {
 
     try {
       const result = await resend.emails.send({
-        from: "Grid Way <onboarding@resend.dev>",
+        from: "Grid Way <hello@wayfinder.cool>",
         to: email,
         subject: `Your Grid Way verification code: ${code}`,
         html: `
@@ -262,7 +262,7 @@ export class MemStorage implements IStorage {
     return sent;
   }
 
-  async createReport(insertReport: InsertReport): Promise<UserReport> {
+async createReport(insertReport: InsertReport): Promise<UserReport> {
     const id = randomUUID();
     const report: UserReport = {
       ...insertReport,
@@ -271,31 +271,6 @@ export class MemStorage implements IStorage {
       additionalDetails: insertReport.additionalDetails ?? null,
     };
     this.reports.set(id, report);
-
-    // Fire-and-forget email; do not fail report creation if email fails
-    const resend = getResend();
-    if (resend) {
-      try {
-        await resend.emails.send({
-          from: "Grid Way Reports <onboarding@resend.dev>",
-          to: "hello@wayfinder.cool",
-          subject: `[Grid Way Report] ${report.reason}`,
-          html: `
-            <h2>New User Report</h2>
-            <p><strong>Report ID:</strong> ${report.id}</p>
-            <p><strong>Reporter ID:</strong> ${report.reporterId}</p>
-            <p><strong>Reported User ID:</strong> ${report.reportedUserId}</p>
-            <p><strong>Reason:</strong> ${report.reason}</p>
-            <p><strong>Additional Details:</strong> ${report.additionalDetails || "None provided"}</p>
-            <p><strong>Submitted:</strong> ${report.createdAt.toISOString()}</p>
-          `,
-        });
-        console.log(`[REPORT] Email sent to hello@wayfinder.cool for report ${report.id}`);
-      } catch (error) {
-        console.error(`[REPORT] Failed to send email for report ${report.id}:`, error);
-      }
-    } else {
-      console.warn("[REPORT] Email not sent (RESEND_API_KEY not set).");
     }
 
     return report;
